@@ -2,10 +2,10 @@
 # Ausgabe an sqlite3
 from multiprocessing.connection import wait
 from time import sleep
-import requests, os, datetime
+import requests, os, datetime, time
 from bs4 import BeautifulSoup
 import sqlite3
-MEASUREMENT_INTERVAL=10
+MEASUREMENT_INTERVAL=20
 DB_NAME='Temperaturen.db'
 TABLE_NAME='Temperaturen'
 
@@ -45,13 +45,14 @@ def get_temp_from_site(station_entry):
 if not os.path.isfile(DB_NAME):
 	conn = sqlite3.connect(DB_NAME)
 	cur = conn.cursor()
-	cur.execute('create table ' + TABLE_NAME + '(d date, ts timestamp, ATemp)')
+	# cur.execute('create table ' + TABLE_NAME + '(UnixTime integer, ts timestamp, ATemp)')
+	cur.execute('create table ' + TABLE_NAME + '(UnixTime integer, ATemp, VTemp, RTemp)')
 else:
 	conn = sqlite3.connect(DB_NAME)
 	cur = conn.cursor()
 
 i = 0 
-while i < 100:
+while i < 20:
 	no_of_stations = len(station_dict.keys())
 	print(str(no_of_stations))
 	temp_arr = []
@@ -61,12 +62,16 @@ while i < 100:
 		temp_arr.append(float_temp)
 		print('Die Temperatur der Station ' + station_name + ' ist: ' + temp)
 
-	today = datetime.date.today()
 	now = datetime.datetime.now()
-	mittelwert = round(sum(temp_arr)/no_of_stations,5)
-	print('Mittelwert: ' + str(mittelwert))
+	unixtime = time.mktime(now.timetuple())
+	
+	ATemp = round(sum(temp_arr)/no_of_stations,5)
+	VTemp = float(ATemp + 30.0)
+	RTemp = float(ATemp + 25.0)
+
+	print('Mittelwert: ' + str(ATemp))
 	with conn:
-		cur.execute('insert into ' + TABLE_NAME + '(d, ts, ATemp) values (?, ?, ?)', (today, now, mittelwert))
+		cur.execute('insert into ' + TABLE_NAME + '(UnixTime, ATemp, VTemp, RTemp) values (?, ?, ?, ?)', (unixtime, ATemp, VTemp, RTemp))
 		#conn.commit()
 	sleep(MEASUREMENT_INTERVAL)
 	i = i + 1
