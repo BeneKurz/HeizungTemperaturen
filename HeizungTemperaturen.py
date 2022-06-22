@@ -1,6 +1,15 @@
 # Ermitteln der Heizungstemperaturen und der Aussentemperatur
-import requests
+# Ausgabe an sqlite3
+from multiprocessing.connection import wait
+from time import sleep
+import requests, os, datetime
 from bs4 import BeautifulSoup
+import sqlite3
+MEASUREMENT_INTERVAL=10
+DB_NAME='Temperaturen.db'
+TABLE_NAME='Temperaturen'
+
+
 
 OX_Stadt='http://www.wetterwarte-sued.com/v_1_0/aktuelles/messwerte/messwerte_aktuell_ochsenhausenstadt.php'
 
@@ -33,10 +42,35 @@ def get_temp_from_site(station_entry):
 	return temperaturecurrent, station_name
 
 
+if not os.path.isfile(DB_NAME):
+	conn = sqlite3.connect(DB_NAME)
+	cur = conn.cursor()
+	cur.execute('create table ' + TABLE_NAME + '(d date, ts timestamp, ATemp)')
+else:
+	conn = sqlite3.connect(DB_NAME)
+	cur = conn.cursor()
 
-for key in station_dict.keys():
-	temp, station_name = get_temp_from_site(station_dict.get(key))
-	print('Die Temperatur der Station ' + station_name + ' ist: ' + temp)
+i = 0 
+while i < 100:
+	no_of_stations = len(station_dict.keys())
+	print(str(no_of_stations))
+	temp_arr = []
+	for key in station_dict.keys():
+		temp, station_name = get_temp_from_site(station_dict.get(key))
+		float_temp = float(temp.replace(',','.'))
+		temp_arr.append(float_temp)
+		print('Die Temperatur der Station ' + station_name + ' ist: ' + temp)
+
+	today = datetime.date.today()
+	now = datetime.datetime.now()
+	mittelwert = round(sum(temp_arr)/no_of_stations,5)
+	print('Mittelwert: ' + str(mittelwert))
+	with conn:
+		cur.execute('insert into ' + TABLE_NAME + '(d, ts, ATemp) values (?, ?, ?)', (today, now, mittelwert))
+		#conn.commit()
+	sleep(MEASUREMENT_INTERVAL)
+	i = i + 1
+conn.close()
 print('Feddisch')
 
 
