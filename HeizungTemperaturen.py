@@ -1,6 +1,14 @@
-# Ermitteln der Heizungstemperaturen und der Aussentemperatur
-# sk,22,06,22 Ausgabe an sqlite3
-# sk,22,06,22 Anzahl derZugriffe auf Webseite reduziert
+# -*- coding: ISO-8859-1 -*-
+'''
+sk,21,06,22 Ermitteln der Heizungstemperaturen und der Aussentemperatur
+sk,22,06,22 Ausgabe an sqlite3
+sk,22,06,22 Anzahl der Zugriffe auf Webseite reduziert
+
+TODO:
+- Aussentemperatur unabhängig von den anderen Temps laden
+- Heizungstemperaturen mit Sensoren auslesen
+
+'''
 
 from multiprocessing.connection import wait
 from time import sleep
@@ -16,21 +24,34 @@ BASE_URL='http://www.wetterwarte-sued.com/v_1_0/aktuelles/messwerte/messwerte_ak
 WEATHER_STATIONS=['weatherstation_29','weatherstation_69']
 
 def get_info_from_station(soup, station_id):
-
 	links = soup.findAll('tr', id=station_id)
 	station_name = ''
-	temperaturecurrent = -200
+	temperaturecurrent = -273
 	for link in links:
 		table_data = link.find_all('td')	
 		for table_entry in table_data:
 			str_table_entry = str(table_entry)
 			if 'temperaturecurrent positive' in str_table_entry:
 				temperaturecurrent = table_entry.text
-			
-				#return temperaturecurrent
 			if 'name' in str_table_entry:
 				station_name = table_entry.text
 	return temperaturecurrent, station_name
+
+def get_aussen_temperatur(soup):
+	temp_arr = []
+	no_of_stations = len(WEATHER_STATIONS)
+	for station_id in WEATHER_STATIONS:
+		temp, station_name = get_info_from_station(soup, station_id)
+		float_temp = float(temp.replace(',','.'))
+		temp_arr.append(float_temp)
+		if VERBOSE: 
+			print('Die Temperatur der Station ' + station_name + ' ist: ' + temp)
+	now = datetime.datetime.now()
+	unixtime = time.mktime(now.timetuple())	
+	ATemp = round(sum(temp_arr)/no_of_stations,5)
+	return ATemp
+
+	
 
 if not os.path.isfile(DB_NAME):
 	conn = sqlite3.connect(DB_NAME)
@@ -44,19 +65,8 @@ i = 0
 while i < 20:
 	r = requests.get(BASE_URL)
 	soup = BeautifulSoup(r.text, 'html.parser')
-	temp_arr = []
-	no_of_stations = len(WEATHER_STATIONS)
-	for station_id in WEATHER_STATIONS:
-		temp, station_name = get_info_from_station(soup, station_id)
-		float_temp = float(temp.replace(',','.'))
-		temp_arr.append(float_temp)
-		if VERBOSE: 
-			print('Die Temperatur der Station ' + station_name + ' ist: ' + temp)
+	ATemp = get_aussen_temperatur(soup)
 
-	now = datetime.datetime.now()
-	unixtime = time.mktime(now.timetuple())
-	
-	ATemp = round(sum(temp_arr)/no_of_stations,5)
 	#TODO
 	VTemp = float(ATemp + 30.0)
 	RTemp = float(ATemp + 25.0)
