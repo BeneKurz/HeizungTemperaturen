@@ -3,6 +3,7 @@
 sk,21,06,22 Ermitteln der Heizungstemperaturen und der Aussentemperatur
 sk,22,06,22 Ausgabe an sqlite3
 sk,22,06,22 Anzahl der Zugriffe auf Webseite reduziert
+sk,23,06,22 Cache beim Zugriff auf die Webseite eingebaut
 
 TODO:
 - Aussentemperatur unabhängig von den anderen Temps laden
@@ -11,14 +12,16 @@ TODO:
 '''
 
 from multiprocessing.connection import wait
+from cachetools import cached, TTLCache
 from time import sleep
 import requests, os, datetime, time
 from bs4 import BeautifulSoup
 import sqlite3
-MEASUREMENT_INTERVAL=10
+MEASUREMENT_INTERVAL_SECONDS=6
+WEATHER_STATION_ACCESS_INTERVAL_SECONDS=60*15
 DB_NAME='Temperaturen.db'
 TABLE_NAME='Temperaturen'
-VERBOSE=False
+VERBOSE=True
 
 BASE_URL='http://www.wetterwarte-sued.com/v_1_0/aktuelles/messwerte/messwerte_aktuell_ochsenhausenstadt.php'
 WEATHER_STATIONS=['weatherstation_29','weatherstation_69']
@@ -37,7 +40,8 @@ def get_info_from_station(soup, station_id):
 				station_name = table_entry.text
 	return temperaturecurrent, station_name
 
-def get_aussen_temperatur(soup):
+
+def do_get_aussen_temperatur(soup):
 	temp_arr = []
 	no_of_stations = len(WEATHER_STATIONS)
 	for station_id in WEATHER_STATIONS:
@@ -45,13 +49,17 @@ def get_aussen_temperatur(soup):
 		float_temp = float(temp.replace(',','.'))
 		temp_arr.append(float_temp)
 		if VERBOSE: 
-			print('Die Temperatur der Station ' + station_name + ' ist: ' + temp)
-	now = datetime.datetime.now()
-	unixtime = time.mktime(now.timetuple())	
-	ATemp = round(sum(temp_arr)/no_of_stations,5)
-	return ATemp
+			print('Hole Temperatur von Station ' + station_name + ': ' + temp)		
+	return round(sum(temp_arr)/no_of_stations,5)
 
-	
+@cached(cache=TTLCache(maxsize=1024, ttl=WEATHER_STATION_ACCESS_INTERVAL_SECONDS))
+def get_aussen_temperatur(BASE_URL):
+	r = requests.get(BASE_URL)
+	soup = BeautifulSoup(r.text, 'html.parser')
+	AussenTemp = do_get_aussen_temperatur(soup)
+	return AussenTemp
+
+
 
 if not os.path.isfile(DB_NAME):
 	conn = sqlite3.connect(DB_NAME)
@@ -62,10 +70,8 @@ else:
 	cur = conn.cursor()
 
 i = 0 
-while i < 20:
-	r = requests.get(BASE_URL)
-	soup = BeautifulSoup(r.text, 'html.parser')
-	ATemp = get_aussen_temperatur(soup)
+while True:
+	ATemp = get_aussen_temperatur(BASE_URL)
 
 	#TODO
 	VTemp = float(ATemp + 30.0)
@@ -74,8 +80,12 @@ while i < 20:
 	if VERBOSE: 
 		print('Mittelwert: ' + str(ATemp))
 	with conn:
-		cur.execute('insert into ' + TABLE_NAME + '(UnixTime, ATemp, VTemp, RTemp) values (?, ?, ?, ?)', (unixtime, ATemp, VTemp, RTemp))
-	sleep(MEASUREMENT_INTERVAL)
+		now = datetime.datetime.now()
+		unixtime = time.mktime(now.timetuple())	
+		temperature_tuple = (unixtime, ATemp, VTemp, RTemp)
+		print('(' + str(i) + ') Speichere Temperaturen: ' + str(temperature_tuple))		
+		cur.execute('insert into ' + TABLE_NAME + '(UnixTime, ATemp, VTemp, RTemp) values (?, ?, ?, ?)', temperature_tuple)
+	sleep(MEASUREMENT_INTERVAL_SECONDS)
 	i = i + 1
 conn.close()
 if VERBOSE: 
