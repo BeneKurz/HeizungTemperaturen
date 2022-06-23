@@ -4,27 +4,47 @@ sk,21,06,22 Ermitteln der Heizungstemperaturen und der Aussentemperatur
 sk,22,06,22 Ausgabe an sqlite3
 sk,22,06,22 Anzahl der Zugriffe auf Webseite reduziert
 sk,23,06,22 Cache beim Zugriff auf die Webseite eingebaut
+sk,23,06,22 Gültige User-Agents übermitteln
 
 TODO:
-- Aussentemperatur unabhängig von den anderen Temps laden
 - Heizungstemperaturen mit Sensoren auslesen
+
+TODO done:
+- Aussentemperatur unabhängig von den anderen Temps laden. OK
 
 '''
 
 from multiprocessing.connection import wait
 from cachetools import cached, TTLCache
 from time import sleep
-import requests, os, datetime, time
+import requests, os, datetime, time, random
 from bs4 import BeautifulSoup
 import sqlite3
 MEASUREMENT_INTERVAL_SECONDS=6
 WEATHER_STATION_ACCESS_INTERVAL_SECONDS=60*15
+
+
 DB_NAME='Temperaturen.db'
 TABLE_NAME='Temperaturen'
 VERBOSE=True
 
 BASE_URL='http://www.wetterwarte-sued.com/v_1_0/aktuelles/messwerte/messwerte_aktuell_ochsenhausenstadt.php'
 WEATHER_STATIONS=['weatherstation_29','weatherstation_69']
+
+def GET_UA():
+    uastrings = ["Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.111 Safari/537.36",\
+                "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.72 Safari/537.36",\
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10) AppleWebKit/600.1.25 (KHTML, like Gecko) Version/8.0 Safari/600.1.25",\
+                "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:33.0) Gecko/20100101 Firefox/33.0",\
+                "Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.111 Safari/537.36",\
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.111 Safari/537.36",\
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_5) AppleWebKit/600.1.17 (KHTML, like Gecko) Version/7.1 Safari/537.85.10",\
+                "Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko",\
+                "Mozilla/5.0 (Windows NT 6.3; WOW64; rv:33.0) Gecko/20100101 Firefox/33.0",\
+                "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.104 Safari/537.36"\
+                ]
+    return random.choice(uastrings)
+
 
 def get_info_from_station(soup, station_id):
 	links = soup.findAll('tr', id=station_id)
@@ -54,7 +74,8 @@ def do_get_aussen_temperatur(soup):
 
 @cached(cache=TTLCache(maxsize=1024, ttl=WEATHER_STATION_ACCESS_INTERVAL_SECONDS))
 def get_aussen_temperatur(BASE_URL):
-	r = requests.get(BASE_URL)
+	headers = {'User-Agent': GET_UA()}
+	r = requests.get(BASE_URL, headers=headers)
 	soup = BeautifulSoup(r.text, 'html.parser')
 	AussenTemp = do_get_aussen_temperatur(soup)
 	return AussenTemp
