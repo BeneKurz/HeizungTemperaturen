@@ -14,7 +14,6 @@ TODO done:
 
 '''
 
-from multiprocessing.connection import wait
 from cachetools import cached, TTLCache
 from time import sleep
 import requests, os, datetime, time, random
@@ -104,7 +103,8 @@ while True:
 		now = datetime.datetime.now()
 		unixtime = time.mktime(now.timetuple())	
 		temperature_tuple = (unixtime, ATemp, VTemp, RTemp)
-		print('(' + str(i) + ') Speichere Temperaturen: ' + str(temperature_tuple))		
+		if VERBOSE:
+			print('(' + str(i) + ') Speichere Temperaturen: ' + str(temperature_tuple))		
 		cur.execute('insert into ' + TABLE_NAME + '(UnixTime, ATemp, VTemp, RTemp) values (?, ?, ?, ?)', temperature_tuple)
 	sleep(MEASUREMENT_INTERVAL_SECONDS)
 	i = i + 1
