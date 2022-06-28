@@ -5,6 +5,7 @@ sk,22,06,22 Ausgabe an sqlite3
 sk,22,06,22 Anzahl der Zugriffe auf Webseite reduziert
 sk,23,06,22 Cache beim Zugriff auf die Webseite eingebaut
 sk,23,06,22 Gültige User-Agents übermitteln
+sk,28,06,22 Absturz bei fehlender Temperatur behoben, weatherstation_9 dazugenommen
 
 TODO:
 - Heizungstemperaturen mit Sensoren auslesen
@@ -28,7 +29,7 @@ TABLE_NAME='Temperaturen'
 VERBOSE=True
 
 BASE_URL='http://www.wetterwarte-sued.com/v_1_0/aktuelles/messwerte/messwerte_aktuell_ochsenhausenstadt.php'
-WEATHER_STATIONS=['weatherstation_29','weatherstation_69']
+WEATHER_STATIONS=['weatherstation_29','weatherstation_69','weatherstation_9']
 
 def GET_UA():
     uastrings = ["Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.111 Safari/537.36",\
@@ -65,8 +66,11 @@ def do_get_aussen_temperatur(soup):
 	no_of_stations = len(WEATHER_STATIONS)
 	for station_id in WEATHER_STATIONS:
 		temp, station_name = get_info_from_station(soup, station_id)
-		float_temp = float(temp.replace(',','.'))
-		temp_arr.append(float_temp)
+		try:
+			float_temp = float(temp.replace(',','.'))
+			temp_arr.append(float_temp)
+		except:
+			float_temp= -100
 		if VERBOSE: 
 			print('Hole Temperatur von Station ' + station_name + ': ' + temp)		
 	return round(sum(temp_arr)/no_of_stations,5)
