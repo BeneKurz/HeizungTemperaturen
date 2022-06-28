@@ -2,16 +2,18 @@
 '''
 sk,21,06,22 Ermitteln der Heizungstemperaturen und der Aussentemperatur
 sk,22,06,22 Ausgabe an sqlite3
+sk,22,06,22 Aussentemperatur unabhängig von den anderen Temps laden. OK
 sk,22,06,22 Anzahl der Zugriffe auf Webseite reduziert
 sk,23,06,22 Cache beim Zugriff auf die Webseite eingebaut
 sk,23,06,22 Gültige User-Agents übermitteln
 sk,28,06,22 Absturz bei fehlender Temperatur behoben, weatherstation_9 dazugenommen
+sk,28,06,22 Verbesserungen
 
 TODO:
 - Heizungstemperaturen mit Sensoren auslesen
 
-TODO done:
-- Aussentemperatur unabhängig von den anderen Temps laden. OK
+
+
 
 '''
 
@@ -73,10 +75,14 @@ def do_get_aussen_temperatur(soup):
 			float_temp = float(temp.replace(',','.'))
 			temp_arr.append(float_temp)
 		except:
-			float_temp= -100
+			float_temp= None
 		if VERBOSE: 
-			print('Hole Temperatur von Station ' + station_name + ': ' + temp)		
-	return round(sum(temp_arr)/no_of_stations,5)
+			print('Hole Temperatur von Station ' + station_name + ': ' + temp)	
+	try:
+		average_temp = round(sum(temp_arr)/no_of_stations,2)
+	except:
+		average_temp = None
+	return average_temp
 
 @cached(cache=TTLCache(maxsize=1024, ttl=WEATHER_STATION_ACCESS_INTERVAL_SECONDS))
 def get_aussen_temperatur(BASE_URL):
@@ -98,21 +104,26 @@ else:
 
 i = 0 
 while True:
+
 	ATemp = get_aussen_temperatur(BASE_URL)
+	if ATemp:
+		#TODO
+		VTemp = float(ATemp + 30.0)
+		RTemp = float(ATemp + 25.0)
 
-	#TODO
-	VTemp = float(ATemp + 30.0)
-	RTemp = float(ATemp + 25.0)
-
-	if VERBOSE: 
-		print('Mittelwert: ' + str(ATemp))
-	with conn:
+		if VERBOSE: 
+			print('Mittelwert: ' + str(ATemp))
+		with conn:
+			now = datetime.datetime.now()
+			unixtime = time.mktime(now.timetuple())	
+			temperature_tuple = (unixtime, ATemp, VTemp, RTemp)
+			if VERBOSE:
+				print('(' + str(i) + ') Speichere Temperaturen: ' + str(temperature_tuple))		
+			cur.execute('insert into ' + TABLE_NAME + '(UnixTime, ATemp, VTemp, RTemp) values (?, ?, ?, ?)', temperature_tuple)
+	else:
 		now = datetime.datetime.now()
 		unixtime = time.mktime(now.timetuple())	
-		temperature_tuple = (unixtime, ATemp, VTemp, RTemp)
-		if VERBOSE:
-			print('(' + str(i) + ') Speichere Temperaturen: ' + str(temperature_tuple))		
-		cur.execute('insert into ' + TABLE_NAME + '(UnixTime, ATemp, VTemp, RTemp) values (?, ?, ?, ?)', temperature_tuple)
+		print(str(unixtime) + ': Es konnte keine Temperatur ermittelt werden!')
 	sleep(MEASUREMENT_INTERVAL_SECONDS)
 	i = i + 1
 conn.close()
