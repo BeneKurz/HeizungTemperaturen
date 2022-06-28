@@ -24,8 +24,10 @@ MEASUREMENT_INTERVAL_SECONDS=6
 WEATHER_STATION_ACCESS_INTERVAL_SECONDS=60*15
 
 
-DB_NAME='Temperaturen.db'
-DB_NAME='/var/lib/grafana/Temperaturen.db'
+if (os.name == 'nt'):                                            
+    DB_NAME='Temperaturen.db'
+else:                                                            
+	DB_NAME='/var/lib/grafana/Temperaturen.db'
 TABLE_NAME='Temperaturen'
 VERBOSE=True
 
