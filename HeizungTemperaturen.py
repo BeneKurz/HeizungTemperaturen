@@ -8,6 +8,7 @@ sk,23,06,22 Cache beim Zugriff auf die Webseite eingebaut
 sk,23,06,22 Gültige User-Agents übermitteln
 sk,28,06,22 Absturz bei fehlender Temperatur behoben, weatherstation_9 dazugenommen
 sk,28,06,22 Verbesserungen
+sk,29,06,22 Fehlerbehandlung verbessert
 
 TODO:
 - Heizungstemperaturen mit Sensoren auslesen
@@ -34,7 +35,7 @@ TABLE_NAME='Temperaturen'
 VERBOSE=True
 
 BASE_URL='http://www.wetterwarte-sued.com/v_1_0/aktuelles/messwerte/messwerte_aktuell_ochsenhausenstadt.php'
-WEATHER_STATIONS=['weatherstation_29','weatherstation_69','weatherstation_9']
+WEATHER_STATIONS=['weatherstation_29','weatherstation_69']
 
 def GET_UA():
     uastrings = ["Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.111 Safari/537.36",\
@@ -54,7 +55,7 @@ def GET_UA():
 def get_info_from_station(soup, station_id):
 	links = soup.findAll('tr', id=station_id)
 	station_name = ''
-	temperaturecurrent = -273
+	temperaturecurrent = '-273,0'
 	for link in links:
 		table_data = link.find_all('td')	
 		for table_entry in table_data:
@@ -74,10 +75,12 @@ def do_get_aussen_temperatur(soup):
 		try:
 			float_temp = float(temp.replace(',','.'))
 			temp_arr.append(float_temp)
+			if VERBOSE: 
+				print('Hole Temperatur von Station ' + station_name + ': ' + temp)	
 		except:
 			float_temp= None
-		if VERBOSE: 
-			print('Hole Temperatur von Station ' + station_name + ': ' + temp)	
+			if VERBOSE: 
+				print('Fehler bei Station ' + station_id)	
 	try:
 		average_temp = round(sum(temp_arr)/no_of_stations,2)
 	except:
