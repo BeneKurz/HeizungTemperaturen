@@ -9,9 +9,10 @@ sk,23,06,22 Gültige User-Agents übermitteln
 sk,28,06,22 Absturz bei fehlender Temperatur behoben, weatherstation_9 dazugenommen
 sk,28,06,22 Verbesserungen
 sk,29,06,22 Fehlerbehandlung verbessert
+sk,29,06,22 Code für das Auelsen der Sensoren eingebaut
 
 TODO:
-- Heizungstemperaturen mit Sensoren auslesen
+
 
 
 
@@ -23,8 +24,10 @@ from time import sleep
 import requests, os, datetime, time, random
 from bs4 import BeautifulSoup
 import sqlite3
-MEASUREMENT_INTERVAL_SECONDS=6
+MEASUREMENT_INTERVAL_SECONDS=60
 WEATHER_STATION_ACCESS_INTERVAL_SECONDS=60*15
+INVALID_TEMP_STR='-273.0'
+INVALID_TEMP_STR='-30.0'
 
 
 if (os.name == 'nt'):                                            
@@ -36,6 +39,39 @@ VERBOSE=True
 
 BASE_URL='http://www.wetterwarte-sued.com/v_1_0/aktuelles/messwerte/messwerte_aktuell_ochsenhausenstadt.php'
 WEATHER_STATIONS=['weatherstation_29','weatherstation_69']
+
+SENSORS={
+	'VTemp': 'ID1',
+	'RTemp': 'ID2',
+	'XTemp': 'ID3'
+}
+
+# https://github.com/Pyplate/rpi_temp_logger/blob/master/monitor.py
+def get_sensor_temp(temperature_key):
+	device_id=SENSORS.get(temperature_key)
+	devicefile='/sys/bus/w1/devices/' + device_id + '/w1_slave'
+	try:
+		fileobj = open(devicefile,'r')
+		lines = fileobj.readlines()
+		fileobj.close()
+	except:
+		return float(INVALID_TEMP_STR)
+
+	# get the status from the end of line 1 
+	status = lines[0][-4:-1]
+
+	# is the status is ok, get the temperature from line 2
+	if status=="YES":
+		print(status)
+		tempstr= lines[1][-6:-1]
+		tempvalue=float(tempstr)/1000
+		print(tempvalue)
+		return tempvalue
+	else:
+		print("There was an error.")
+		return float(INVALID_TEMP_STR)
+
+	
 
 def GET_UA():
     uastrings = ["Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.111 Safari/537.36",\
@@ -55,7 +91,7 @@ def GET_UA():
 def get_info_from_station(soup, station_id):
 	links = soup.findAll('tr', id=station_id)
 	station_name = ''
-	temperaturecurrent = '-273,0'
+	temperaturecurrent = INVALID_TEMP_STR
 	for link in links:
 		table_data = link.find_all('td')	
 		for table_entry in table_data:
@@ -111,8 +147,8 @@ while True:
 	ATemp = get_aussen_temperatur(BASE_URL)
 	if ATemp:
 		#TODO
-		VTemp = float(ATemp + 30.0)
-		RTemp = float(ATemp + 25.0)
+		VTemp = get_sensor_temp('VTemp')
+		RTemp = get_sensor_temp('RTemp')
 
 		if VERBOSE: 
 			print('Mittelwert: ' + str(ATemp))
