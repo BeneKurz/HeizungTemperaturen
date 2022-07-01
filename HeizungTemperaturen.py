@@ -41,7 +41,7 @@ BASE_URL='http://www.wetterwarte-sued.com/v_1_0/aktuelles/messwerte/messwerte_ak
 WEATHER_STATIONS=['weatherstation_29','weatherstation_69']
 
 SENSORS={
-	'VTemp': 'ID1',
+	'VTemp': '28-9283071e64ff',
 	'RTemp': 'ID2',
 	'XTemp': 'ID3'
 }
