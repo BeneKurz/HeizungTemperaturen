@@ -10,6 +10,7 @@ sk,28,06,22 Absturz bei fehlender Temperatur behoben, weatherstation_9 dazugenom
 sk,28,06,22 Verbesserungen
 sk,29,06,22 Fehlerbehandlung verbessert
 sk,29,06,22 Code für das Auelsen der Sensoren eingebaut
+sk,01,07,22 Fehlerbehandlung verbessert, Sensor VTemp hinterlegt
 
 TODO:
 
@@ -58,17 +59,22 @@ def get_sensor_temp(temperature_key):
 		return float(INVALID_TEMP_STR)
 
 	# get the status from the end of line 1 
-	status = lines[0][-4:-1]
+	try:
+		status = lines[0][-4:-1]
+	except:
+		status = 'ERROR'
 
 	# is the status is ok, get the temperature from line 2
 	if status=="YES":
-		print(status)
-		tempstr= lines[1][-6:-1]
-		tempvalue=float(tempstr)/1000
-		print(tempvalue)
-		return tempvalue
+		#print(status)
+		try:
+			tempstr= lines[1][-6:-1]
+			tempvalue=float(tempstr)/1000
+			return tempvalue
+		except:
+			return float(INVALID_TEMP_STR)
 	else:
-		print("There was an error.")
+		#print("There was an error.")
 		return float(INVALID_TEMP_STR)
 
 	
