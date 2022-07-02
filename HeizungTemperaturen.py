@@ -11,6 +11,7 @@ sk,28,06,22 Verbesserungen
 sk,29,06,22 Fehlerbehandlung verbessert
 sk,29,06,22 Code für das Auelsen der Sensoren eingebaut
 sk,01,07,22 Fehlerbehandlung verbessert, Sensor VTemp hinterlegt
+sk,02,07,22 Sensor RTemp hinterlegt
 
 TODO:
 
@@ -43,7 +44,7 @@ WEATHER_STATIONS=['weatherstation_29','weatherstation_69']
 
 SENSORS={
 	'VTemp': '28-9283071e64ff',
-	'RTemp': 'ID2',
+	'RTemp': '28-01193cfd1606',
 	'XTemp': 'ID3'
 }
 
