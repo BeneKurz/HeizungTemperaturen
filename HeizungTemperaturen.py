@@ -9,7 +9,7 @@ sk,23,06,22 Gültige User-Agents übermitteln
 sk,28,06,22 Absturz bei fehlender Temperatur behoben, weatherstation_9 dazugenommen
 sk,28,06,22 Verbesserungen
 sk,29,06,22 Fehlerbehandlung verbessert
-sk,29,06,22 Code für das Auelsen der Sensoren eingebaut
+sk,29,06,22 Code für das Auslesen der Sensoren eingebaut
 sk,01,07,22 Fehlerbehandlung verbessert, Sensor VTemp hinterlegt
 sk,02,07,22 Sensor RTemp hinterlegt
 
@@ -43,7 +43,7 @@ BASE_URL='http://www.wetterwarte-sued.com/v_1_0/aktuelles/messwerte/messwerte_ak
 WEATHER_STATIONS=['weatherstation_29','weatherstation_69']
 
 SENSORS={
-	'VTemp': '28-9283071e64ff',
+	'VTemp': '28-9283071e64ff', # id= 28-ff-64-1e-07-83-92-c6
 	'RTemp': '28-01193cfd1606',
 	'XTemp': 'ID3'
 }
@@ -63,18 +63,23 @@ def get_sensor_temp(temperature_key):
 	try:
 		status = lines[0][-4:-1]
 	except:
+		if VERBOSE: 
+			print('Error get lines')
 		status = 'ERROR'
 
 	# is the status is ok, get the temperature from line 2
 	if status=="YES":
-		#print(status)
 		try:
 			tempstr= lines[1][-6:-1]
 			tempvalue=float(tempstr)/1000
 			return tempvalue
 		except:
+			if VERBOSE: 
+				print('Error convert float')
 			return float(INVALID_TEMP_STR)
 	else:
+		if VERBOSE: 
+			print('status: ' + status)
 		#print("There was an error.")
 		return float(INVALID_TEMP_STR)
 
