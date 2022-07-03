@@ -124,7 +124,7 @@ def do_get_aussen_temperatur(soup):
 			float_temp = float(temp.replace(',','.'))
 			temp_arr.append(float_temp)
 			if VERBOSE: 
-				print('Hole Temperatur von Station ' + station_name + ': ' + str(temp))	
+				print('Hole Temperatur von Station ' + str(station_name) + ': ' + str(temp))	
 		except:
 			float_temp= None
 			if VERBOSE: 
