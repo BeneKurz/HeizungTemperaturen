@@ -40,12 +40,17 @@ else:
 conn = sqlite3.connect(DB_FILENAME)
 sel_string = 'SELECT * FROM ' + TABLE_NAME
 df = pd.read_sql(sel_string,conn)
+
+
+# @app.callback(Output("date-range-picker", "end_date"), Input("date-range-picker", "start_date"))
 app = dash.Dash(__name__)
+
 
 # Unix epoch in DateTime umwandeln 
 # https://stackoverflow.com/questions/65948018/how-to-convert-unix-epoch-time-to-datetime-with-timezone-in-pandas
 df['UnixTime'] = pd.to_datetime(df['UnixTime'],unit='s', utc=True).apply(lambda x: x.tz_convert('Europe/Berlin'))
 Temps = px.line(df, x=df['UnixTime'], y=df.columns)
+
 
 app.layout = html.Div([
     # dcc.Dropdown(['New York City', 'Montreal', 'San Francisco'], 'Montreal'),
@@ -66,15 +71,21 @@ app.layout = html.Div([
         display_format="DD.MM.YYYY",
         start_date = date.today(),
         end_date = date.today(),
-        end_date_placeholder_text='Select a date!'
+        end_date_placeholder_text='Select a date!',
+        minimum_nights=0,
     ),
         dcc.Graph(
         id='Temperaturen',
         figure=Temps
     ),
-
-
 ])
+
+@app.callback(Output("date-range-picker", "end_date"),
+              [Input("date-range-picker", "start_date"), Input("date-range-picker", "end_date")])
+def update_start_date(start_date):
+    # Das fehlt hier noch!
+    # https://stackoverflow.com/questions/69017021/dash-datepickerrange-with-graph
+    return start_date
 
 
 
