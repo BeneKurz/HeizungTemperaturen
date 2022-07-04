@@ -12,12 +12,9 @@ sk,29,06,22 Fehlerbehandlung verbessert
 sk,29,06,22 Code für das Auslesen der Sensoren eingebaut
 sk,01,07,22 Fehlerbehandlung verbessert, Sensor VTemp hinterlegt
 sk,02,07,22 Sensor RTemp hinterlegt
+sk,04,07,22 Sensor-Dict geändert
 
 TODO:
-
-
-
-
 
 '''
 
@@ -42,15 +39,38 @@ VERBOSE=True
 BASE_URL='http://www.wetterwarte-sued.com/v_1_0/aktuelles/messwerte/messwerte_aktuell_ochsenhausenstadt.php'
 WEATHER_STATIONS=['weatherstation_29','weatherstation_69']
 
-SENSORS={
-	'VTemp': '28-9283071e64ff', # id= 28-ff-64-1e-07-83-92-c6
-	'RTemp': '28-01193cfd1606',
-	'XTemp': 'ID3'
+SENSORS= {
+	'UTime': {
+		'ID': None, 
+		'field_name': 'UnixTime', 
+		'descr': 'Zeitfeld' 
+	},  
+	'ATemp': {
+		'ID': None, 
+		'field_name': 'AussenTemp', 
+		'descr': 'Aussentemperatur-Feld' 
+	},  
+
+	'VTemp': {
+		'ID': '28-9283071e64ff', 
+		'field_name': 'VorlaufTemp', 
+		'descr': 'Vorlauftemperatur, hersteller= 28-ff-64-1e-07-83-92-c6' 
+		},  
+	'RTemp': {
+		'ID': '28-01193cfd1606',
+		'field_name': 'RuecklaufTemp', 
+		'descr': 'Rücklauftemperatur, id=' 
+	},
 }
+
+
 
 # https://github.com/Pyplate/rpi_temp_logger/blob/master/monitor.py
 def get_sensor_temp(temperature_key):
-	device_id=SENSORS.get(temperature_key)
+	device_entry=SENSORS.get(temperature_key)
+	device_id=device_entry.get('ID')
+	if not device_id:
+		return float(INVALID_TEMP_STR)
 	devicefile='/sys/bus/w1/devices/' + device_id + '/w1_slave'
 	try:
 		fileobj = open(devicefile,'r')
@@ -143,12 +163,20 @@ def get_aussen_temperatur(BASE_URL):
 	AussenTemp = do_get_aussen_temperatur(soup)
 	return AussenTemp
 
+def get_field_names():
+	f_names = []
+	for key in SENSORS.keys():
+		sensor= SENSORS.get(key)
+		f_names.append(sensor.get('field_name'))
+	return tuple(f_names)
 
 
+field_names = get_field_names()
 if not os.path.isfile(DB_NAME):
 	conn = sqlite3.connect(DB_NAME)
 	cur = conn.cursor()
-	cur.execute('create table ' + TABLE_NAME + '(UnixTime integer, ATemp, VTemp, RTemp)')
+	create_string = 'create table ' + TABLE_NAME + str(field_names)
+	cur.execute(create_string)
 else:
 	conn = sqlite3.connect(DB_NAME)
 	cur = conn.cursor()
@@ -170,7 +198,8 @@ while True:
 			temperature_tuple = (unixtime, ATemp, VTemp, RTemp)
 			if VERBOSE:
 				print('(' + str(i) + ') Speichere Temperaturen: ' + str(temperature_tuple))		
-			cur.execute('insert into ' + TABLE_NAME + '(UnixTime, ATemp, VTemp, RTemp) values (?, ?, ?, ?)', temperature_tuple)
+			insert_string = 'insert into ' + TABLE_NAME + str(field_names) + ' values (?, ?, ?, ?)'
+			cur.execute(insert_string, temperature_tuple)
 	else:
 		now = datetime.datetime.now()
 		unixtime = time.mktime(now.timetuple())	
