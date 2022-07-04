@@ -13,6 +13,7 @@ sk,29,06,22 Code für das Auslesen der Sensoren eingebaut
 sk,01,07,22 Fehlerbehandlung verbessert, Sensor VTemp hinterlegt
 sk,02,07,22 Sensor RTemp hinterlegt
 sk,04,07,22 Sensor-Dict geändert
+sk,04,07,22 Sensor-Dict und Variable ausgelagert in config.cfg
 
 TODO:
 
@@ -22,11 +23,12 @@ from cachetools import cached, TTLCache
 from time import sleep
 import requests, os, datetime, time, random
 from bs4 import BeautifulSoup
+import json
 import sqlite3
-MEASUREMENT_INTERVAL_SECONDS=60
-WEATHER_STATION_ACCESS_INTERVAL_SECONDS=60*15
-INVALID_TEMP_STR='-273.0'
-INVALID_TEMP_STR='-30.0'
+CFG_FILE='.\config.cfg'
+# MEASUREMENT_INTERVAL_SECONDS=60
+# WEATHER_STATION_ACCESS_INTERVAL_SECONDS=60*15
+# INVALID_TEMP_STR='-30.0'
 
 
 if (os.name == 'nt'):                                            
@@ -39,30 +41,48 @@ VERBOSE=True
 BASE_URL='http://www.wetterwarte-sued.com/v_1_0/aktuelles/messwerte/messwerte_aktuell_ochsenhausenstadt.php'
 WEATHER_STATIONS=['weatherstation_29','weatherstation_69']
 
-SENSORS= {
-	'UTime': {
-		'ID': None, 
-		'field_name': 'UnixTime', 
-		'descr': 'Zeitfeld' 
-	},  
-	'ATemp': {
-		'ID': None, 
-		'field_name': 'AussenTemp', 
-		'descr': 'Aussentemperatur-Feld' 
-	},  
+if os.path.isfile(CFG_FILE):       
+	s = open(CFG_FILE, 'r').read() 
+	SENSORS = {}                  
+	try:                          
+		GLOBALS = eval(s)
+		MEASUREMENT_INTERVAL_SECONDS=GLOBALS.get('MEASUREMENT_INTERVAL_SECONDS')
+		WEATHER_STATION_ACCESS_INTERVAL_SECONDS=GLOBALS.get('WEATHER_STATION_ACCESS_INTERVAL_SECONDS')
+		INVALID_TEMP_STR=GLOBALS.get('INVALID_TEMP_STR')
+		SENSORS = GLOBALS.get('SENSORS')
+	except:     
+		print('error config file '+ CFG_FILE)  
 
-	'VTemp': {
-		'ID': '28-9283071e64ff', 
-		'field_name': 'VorlaufTemp', 
-		'descr': 'Vorlauftemperatur, hersteller= 28-ff-64-1e-07-83-92-c6' 
-		},  
-	'RTemp': {
-		'ID': '28-01193cfd1606',
-		'field_name': 'RuecklaufTemp', 
-		'descr': 'Rücklauftemperatur, id=' 
-	},
-}
 
+# {
+#	'MEASUREMENT_INTERVAL_SECONDS': 60,
+#	'WEATHER_STATION_ACCESS_INTERVAL_SECONDS' : 60*15,
+#	'INVALID_TEMP_STR': '-30.0',
+#
+# 	'SENSORS' : {
+# 		'UTime': {
+# 			'ID': None, 
+# 			'field_name': 'UnixTime', 
+# 			'descr': 'Zeitfeld' 
+# 		},  
+# 		'ATemp': {
+# 			'ID': None, 
+# 			'field_name': 'AussenTemp', 
+# 			'descr': 'Aussentemperatur-Feld' 
+# 		},  
+
+# 		'VTemp': {
+# 			'ID': '28-9283071e64ff', 
+# 			'field_name': 'VorlaufTemp', 
+# 			'descr': 'Vorlauftemperatur, hersteller= 28-ff-64-1e-07-83-92-c6' 
+# 			},  
+# 		'RTemp': {
+# 			'ID': '28-01193cfd1606',
+# 			'field_name': 'RuecklaufTemp', 
+# 			'descr': 'Ruecklauftemperatur, id=' 
+# 		},
+# 	},
+# }
 
 
 # https://github.com/Pyplate/rpi_temp_logger/blob/master/monitor.py
