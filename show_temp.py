@@ -15,9 +15,6 @@ from dateutil import tz
 from dash.dependencies import Input, Output
 
 CFG_FILE='.\config.cfg'
-# MEASUREMENT_INTERVAL_SECONDS=60
-# WEATHER_STATION_ACCESS_INTERVAL_SECONDS=60*15
-# INVALID_TEMP_STR='-30.0'
 
 if os.path.isfile(CFG_FILE):       
 	s = open(CFG_FILE, 'r').read() 
@@ -41,10 +38,7 @@ else:
 
 
 conn = sqlite3.connect(DB_FILENAME)
-#cursor =conn.cursor()
 sel_string = 'SELECT * FROM ' + TABLE_NAME
-#cursor.execute(sel_string)
-
 df = pd.read_sql(sel_string,conn)
 app = dash.Dash(__name__)
 
@@ -72,7 +66,6 @@ app.layout = html.Div([
         display_format="DD.MM.YYYY",
         start_date = date.today(),
         end_date = date.today(),
-        #start_date=date(1997, 5, 3),
         end_date_placeholder_text='Select a date!'
     ),
         dcc.Graph(
