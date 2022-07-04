@@ -13,7 +13,7 @@ sk,29,06,22 Code für das Auslesen der Sensoren eingebaut
 sk,01,07,22 Fehlerbehandlung verbessert, Sensor VTemp hinterlegt
 sk,02,07,22 Sensor RTemp hinterlegt
 sk,04,07,22 Sensor-Dict geändert
-sk,04,07,22 Sensor-Dict und Variable ausgelagert in config.cfg
+sk,04,07,22 Sensor-Dict und Variablen ausgelagert in config.cfg
 
 TODO:
 
@@ -30,17 +30,6 @@ CFG_FILE='.\config.cfg'
 # WEATHER_STATION_ACCESS_INTERVAL_SECONDS=60*15
 # INVALID_TEMP_STR='-30.0'
 
-
-if (os.name == 'nt'):                                            
-    DB_NAME='Temperaturen.db'
-else:                                                            
-	DB_NAME='/var/lib/grafana/Temperaturen.db'
-TABLE_NAME='Temperaturen'
-VERBOSE=True
-
-BASE_URL='http://www.wetterwarte-sued.com/v_1_0/aktuelles/messwerte/messwerte_aktuell_ochsenhausenstadt.php'
-WEATHER_STATIONS=['weatherstation_29','weatherstation_69']
-
 if os.path.isfile(CFG_FILE):       
 	s = open(CFG_FILE, 'r').read() 
 	SENSORS = {}                  
@@ -49,15 +38,32 @@ if os.path.isfile(CFG_FILE):
 		MEASUREMENT_INTERVAL_SECONDS=GLOBALS.get('MEASUREMENT_INTERVAL_SECONDS')
 		WEATHER_STATION_ACCESS_INTERVAL_SECONDS=GLOBALS.get('WEATHER_STATION_ACCESS_INTERVAL_SECONDS')
 		INVALID_TEMP_STR=GLOBALS.get('INVALID_TEMP_STR')
+		DB_NAME=GLOBALS.get('DB_NAME')
+		TABLE_NAME=GLOBALS.get('TABLE_NAME')
+		VERBOSE= GLOBALS.get('VERBOSE')
 		SENSORS = GLOBALS.get('SENSORS')
 	except:     
 		print('error config file '+ CFG_FILE)  
+
+
+
+if (os.name == 'nt'):                                            
+    DB_FILENAME=DB_NAME
+else:                                                            
+	DB_FILENAME='/var/lib/grafana/' + DB_NAME
+
+
+BASE_URL='http://www.wetterwarte-sued.com/v_1_0/aktuelles/messwerte/messwerte_aktuell_ochsenhausenstadt.php'
+WEATHER_STATIONS=['weatherstation_29','weatherstation_69']
 
 
 # {
 #	'MEASUREMENT_INTERVAL_SECONDS': 60,
 #	'WEATHER_STATION_ACCESS_INTERVAL_SECONDS' : 60*15,
 #	'INVALID_TEMP_STR': '-30.0',
+#	'DB_NAME': 'Temperaturen.db' ,
+#	'TABLE_NAME': 'Temperaturen' ,
+#	'VERBOSE': True,
 #
 # 	'SENSORS' : {
 # 		'UTime': {
@@ -192,13 +198,13 @@ def get_field_names():
 
 
 field_names = get_field_names()
-if not os.path.isfile(DB_NAME):
-	conn = sqlite3.connect(DB_NAME)
+if not os.path.isfile(DB_FILENAME):
+	conn = sqlite3.connect(DB_FILENAME)
 	cur = conn.cursor()
 	create_string = 'create table ' + TABLE_NAME + str(field_names)
 	cur.execute(create_string)
 else:
-	conn = sqlite3.connect(DB_NAME)
+	conn = sqlite3.connect(DB_FILENAME)
 	cur = conn.cursor()
 
 i = 0 
