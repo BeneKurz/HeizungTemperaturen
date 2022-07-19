@@ -25,7 +25,11 @@ import requests, os, datetime, time, random
 from bs4 import BeautifulSoup
 import json
 import sqlite3
-CFG_FILE='.\config.cfg'
+if (os.name == 'nt'):                                            
+	CFG_FILE='.\config.cfg'
+else:
+	CFG_FILE='./config.cfg'
+CFG_FILE='config.cfg'
 # MEASUREMENT_INTERVAL_SECONDS=60
 # WEATHER_STATION_ACCESS_INTERVAL_SECONDS=60*15
 # INVALID_TEMP_STR='-30.0'
