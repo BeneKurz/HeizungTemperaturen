@@ -15,11 +15,7 @@ sk,01,07,22 Fehlerbehandlung verbessert, Sensor VTemp hinterlegt
 sk,02,07,22 Sensor RTemp hinterlegt
 sk,04,07,22 Sensor-Dict geändert
 sk,04,07,22 Sensor-Dict und Variablen ausgelagert in config.cfg
-sk,26,07,22 CFG_FILE 'config.cfg' unter Windows
 sk,09,11,22 Umbau Program und cfg, Abfrage enFactory Sensoren
-
-
-
 
 TODO:
 
@@ -33,11 +29,6 @@ import json
 import sqlite3
 encoding = 'utf-8'
 CFG_FILE='config.cfg'
-if (os.name == 'nt'):                                            
-	CFG_FILE='.\config.cfg'
-else:
-	CFG_FILE='./config.cfg'
-# CFG_FILE='config.cfg'
 # MEASUREMENT_INTERVAL_SECONDS=60
 # WEATHER_STATION_ACCESS_INTERVAL_SECONDS=60*15
 # INVALID_TEMP_STR='-30.0'
