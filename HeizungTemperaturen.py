@@ -8,12 +8,14 @@ sk,23,06,22 Cache beim Zugriff auf die Webseite eingebaut
 sk,23,06,22 Gültige User-Agents übermitteln
 sk,28,06,22 Absturz bei fehlender Temperatur behoben, weatherstation_9 dazugenommen
 sk,28,06,22 Verbesserungen
+
 sk,29,06,22 Fehlerbehandlung verbessert
 sk,29,06,22 Code für das Auslesen der Sensoren eingebaut
 sk,01,07,22 Fehlerbehandlung verbessert, Sensor VTemp hinterlegt
 sk,02,07,22 Sensor RTemp hinterlegt
 sk,04,07,22 Sensor-Dict geändert
 sk,04,07,22 Sensor-Dict und Variablen ausgelagert in config.cfg
+sk,09,11,22 Umbau Program und cfg, Abfrage enFactory Sensoren
 
 TODO:
 
@@ -21,11 +23,12 @@ TODO:
 
 from cachetools import cached, TTLCache
 from time import sleep
-import requests, os, datetime, time, random
+import requests, os, datetime, time, random, subprocess,signal
 from bs4 import BeautifulSoup
 import json
 import sqlite3
-CFG_FILE='.\config.cfg'
+encoding = 'utf-8'
+CFG_FILE='config.cfg'
 # MEASUREMENT_INTERVAL_SECONDS=60
 # WEATHER_STATION_ACCESS_INTERVAL_SECONDS=60*15
 # INVALID_TEMP_STR='-30.0'
@@ -92,7 +95,7 @@ WEATHER_STATIONS=['weatherstation_29','weatherstation_69']
 
 
 # https://github.com/Pyplate/rpi_temp_logger/blob/master/monitor.py
-def get_sensor_temp(temperature_key):
+def get_DS18B20_temp(temperature_key):
 	device_entry=SENSORS.get(temperature_key)
 	device_id=device_entry.get('ID')
 	if not device_id:
@@ -197,6 +200,42 @@ def get_field_names():
 	return tuple(f_names)
 
 
+def kill_child_processes(parent_pid, sig=signal.SIGTERM):
+    # print('Kill proc: ' + str(parent_pid))
+    ps_command = subprocess.Popen("ps -o pid --ppid %d --noheaders" % parent_pid, shell=True, stdout=subprocess.PIPE)
+    ps_output = ps_command.stdout.read()
+    retcode = ps_command.wait()
+    assert retcode == 0, "ps command returned %d" % retcode
+    #print(ps_output)
+    split_output = ps_output.decode().split("\n")
+    #print(type(split_output))
+    for pid_str in split_output[:-1]:
+        # pid_str = (pid_str,encoding).strip()
+        # print(pid_str)
+        os.kill(int(pid_str), sig)
+
+def compare_dict(probe_dict, in_dict):
+    for key in probe_dict:
+        if probe_dict.get(key) != in_dict.get(key):
+            return False
+    return True
+
+def get_rtl_data(check_dict):
+    print('Suche: ' + str(check_dict))
+    proc = subprocess.Popen(command_line, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+    act_pid= proc.pid
+    while True:
+        line = str(proc.stdout.readline(),encoding).strip()
+        if not 'model' in line:
+            continue
+        line_dict = json.loads(line)
+        if compare_dict(check_dict, line_dict):
+            print('gefunden: ' + str(check_dict.get('model')))
+            time.sleep(5) #Wait 5 secs before killing
+            kill_child_processes(act_pid, sig=signal.SIGTERM)
+            return line_dict
+
+
 field_names = get_field_names()
 if not os.path.isfile(DB_FILENAME):
 	conn = sqlite3.connect(DB_FILENAME)
@@ -209,18 +248,32 @@ else:
 
 i = 0 
 while True:
+	sensors = GLOBALS.get('SENSORS')
+	temp_dict={}
+	for sensor in sensors:
+		sensor_name=sensor
+		sensor_dict=sensors.get(sensor_name)
+		field_name= sensor_dict.get('field_name')
+		sensor_type= sensor_dict.get('sensor_type')
+		if sensor_type == 'UnixTime':
 
-	ATemp = get_aussen_temperatur(BASE_URL)
+				now = datetime.datetime.now()
+				unixtime = time.mktime(now.timetuple())	
+				temp_dict[field_name] = unixtime
+
+
+		
+		temp_dict['ATemp'] = get_aussen_temperatur(BASE_URL)
+
+
 	if ATemp:
 		#TODO
-		VTemp = get_sensor_temp('VTemp')
-		RTemp = get_sensor_temp('RTemp')
+		VTemp = get_DS18B20_temp('VTemp')
+		RTemp = get_DS18B20_temp('RTemp')
 
 		if VERBOSE: 
 			print('Mittelwert: ' + str(ATemp))
 		with conn:
-			now = datetime.datetime.now()
-			unixtime = time.mktime(now.timetuple())	
 			temperature_tuple = (unixtime, ATemp, VTemp, RTemp)
 			if VERBOSE:
 				print('(' + str(i) + ') Speichere Temperaturen: ' + str(temperature_tuple))		
