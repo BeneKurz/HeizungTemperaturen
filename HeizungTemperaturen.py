@@ -16,6 +16,7 @@ sk,02,07,22 Sensor RTemp hinterlegt
 sk,04,07,22 Sensor-Dict geändert
 sk,04,07,22 Sensor-Dict und Variablen ausgelagert in config.cfg
 sk,09,11,22 Umbau Program und cfg, Abfrage enFactory Sensoren
+sk,09,11,22 Umbau Program und cfg fast fertig
 
 TODO:
 
@@ -192,12 +193,6 @@ def get_aussen_temperatur(BASE_URL):
 	AussenTemp = do_get_aussen_temperatur(soup)
 	return AussenTemp
 
-def get_field_names():
-	f_names = []
-	for key in SENSORS.keys():
-		sensor= SENSORS.get(key)
-		f_names.append(sensor.get('field_name'))
-	return tuple(f_names)
 
 
 def kill_child_processes(parent_pid, sig=signal.SIGTERM):
@@ -235,8 +230,31 @@ def get_rtl_data(check_dict):
             kill_child_processes(act_pid, sig=signal.SIGTERM)
             return line_dict
 
+def dict_sort_func(par):
+	sensor= SENSORS.get(par)
+	return sensor.get('index')
 
-field_names = get_field_names()
+def get_sensor_names():
+	# Nach index-Feld Sortierte Sensornamen
+	f_names = []
+	sorted_dict = sorted(SENSORS, key=dict_sort_func)
+	for key in sorted_dict:
+		sensor= SENSORS.get(key)
+		if sensor.get('index') > 0:
+			f_names.append(key)
+	return tuple(f_names)
+
+def get_field_names(sensor_names):
+	# Nach index-Feld Sortierte Feldnamen
+	field_names = []
+	for sensor_name in sensor_names:
+		field_names.append(SENSORS.get(sensor_name).get('field_name'))
+	return tuple(field_names)
+
+
+
+sensor_names = get_sensor_names()
+field_names = get_field_names(sensor_names)
 if not os.path.isfile(DB_FILENAME):
 	conn = sqlite3.connect(DB_FILENAME)
 	cur = conn.cursor()
@@ -250,21 +268,25 @@ i = 0
 while True:
 	sensors = GLOBALS.get('SENSORS')
 	temp_dict={}
-	for sensor in sensors:
+	#sorted_dict = sorted(SENSORS, key=dict_sort_func)
+	for field_name in field_names:
+	#for key in sorted_dict:
+		sensor= SENSORS.get(field_name)
 		sensor_name=sensor
 		sensor_dict=sensors.get(sensor_name)
 		field_name= sensor_dict.get('field_name')
 		sensor_type= sensor_dict.get('sensor_type')
 		if sensor_type == 'UnixTime':
-
-				now = datetime.datetime.now()
-				unixtime = time.mktime(now.timetuple())	
-				temp_dict[field_name] = unixtime
+			now = datetime.datetime.now()
+			unixtime = time.mktime(now.timetuple())	
+			temp_dict[field_name] = unixtime
+		if sensor_type == 'DS18B20':
+			temp_dict[field_name] = get_DS18B20_temp(sensor_name)
 
 
 		
-		temp_dict['ATemp'] = get_aussen_temperatur(BASE_URL)
-
+	temp_dict['ATemp'] = get_aussen_temperatur(BASE_URL)
+	ATemp = temp_dict['ATemp'] 
 
 	if ATemp:
 		#TODO
