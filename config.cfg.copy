@@ -1,0 +1,59 @@
+{
+	'MEASUREMENT_INTERVAL_SECONDS': 60,
+	'WEATHER_STATION_ACCESS_INTERVAL_SECONDS' : 60*15,
+	'INVALID_TEMP_STR': '-30.0',
+	'DB_NAME': 'Temperaturen.db' ,
+	'TABLE_NAME': 'Temperaturen' ,
+	'VERBOSE': True,
+	
+	'SENSORS' : {
+		'UTime': {
+			'index': 1,
+		    'sensor_type': 'UnixTime',
+			'ID': None, 
+			'field_name': 'UnixTime', 
+			'descr': 'Zeitfeld' 
+		},  
+		'ATemp': {
+			'index': 2,
+			'sensor_type': 'rtl_433',
+			'ID': None, 
+			'field_name': 'AussenTemp', 
+			'query_dict': {'model': 'inFactory-TH', 'channel': 1 },
+			'descr': 'Aussentemperatur-Feld' 
+		},  
+
+
+		'VTemp': {
+			'index': 3,
+		    'sensor_type': 'DS18B20',
+			'ID': '28-9283071e64ff', 
+			'field_name': 'VorlaufTemp', 
+			'descr': 'Vorlauftemperatur, hersteller= 28-ff-64-1e-07-83-92-c6' 
+			},  
+		'RTemp': {
+			'index': 4,
+		    'sensor_type': 'DS18B20',
+			'ID': '28-01193cfd1606',
+			'field_name': 'RuecklaufTemp', 
+			'descr': 'Ruecklauftemperatur, id=' 
+		},
+		'WTemp': {
+			'index': 5,
+			'sensor_type': 'rtl_433',
+			'ID': None, 
+			'field_name': 'WohnzimmerTemp', 
+			'query_dict': {'model': 'inFactory-TH', 'channel': 3 },
+			'descr': 'Wohnzimmertemperatur-Feld' 
+		},  
+		'KTemp': {
+			'index': -1,
+			'sensor_type': 'rtl_433',
+			'ID': None, 
+			'field_name': 'KuechenTemp', 
+			'query_dict': {'model': 'inFactory-TH', 'channel': 2 },
+			'descr': 'Kuechentemperatur-Feld' 
+		},  
+
+	},
+}
