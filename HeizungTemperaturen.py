@@ -239,9 +239,10 @@ def get_rtl_data(query_dict):
     proc = subprocess.Popen(command_line, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
     act_pid= proc.pid
     while True:
-        print('read line from process')
-        time.sleep(1)
         line = str(proc.stdout.readline(),encoding).strip()
+        print('read from process: ' + line)
+        time.sleep(1)
+
         if not 'model' in line:
             continue
         line_dict = json.loads(line)
