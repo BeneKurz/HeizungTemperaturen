@@ -20,6 +20,7 @@ sk,09,11,22 Umbau Programm fast fertig
 sk,11,11,22 Umbau Programm fertig, ungetestet
 
 TODO:
+timeout für rtl_433
 
 '''
 
@@ -219,11 +220,11 @@ def compare_dict(probe_dict, in_dict):
 def get_rtl_433_data(sensor_dict):
 	query_dict = sensor_dict.get('query_dict')
 	return get_rtl_data(query_dict)
-	return INVALID_TEMP_STR
 
 def get_rtl_data(query_dict):
     command_line='/usr/local/bin/rtl_433 -R91 -Csi -v -g50 -Fjson'
-    print('Suche: ' + str(query_dict))
+    if VERBOSE: 
+        print('Suche: ' + str(query_dict))
     proc = subprocess.Popen(command_line, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
     act_pid= proc.pid
     while True:
@@ -237,7 +238,7 @@ def get_rtl_data(query_dict):
             kill_child_processes(act_pid, sig=signal.SIGTERM)
             bene = line_dict.get('skdfj')
             temperature = line_dict.get('temperature_C')
-            print(query_dict.get('field_name') + ' ' + str(temperature) )
+            if VERBOSE: print(query_dict.get('field_name') + ' ' + str(temperature) )
             return temperature
 
 def dict_sort_func(par):
