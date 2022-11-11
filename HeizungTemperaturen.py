@@ -26,7 +26,8 @@ timeout für rtl_433
 
 from cachetools import cached, TTLCache
 from time import sleep
-import requests, os, datetime, time, random, subprocess,signal
+import os, sys
+import requests, datetime, time, random, subprocess,signal
 from bs4 import BeautifulSoup
 import json
 import sqlite3
@@ -224,12 +225,22 @@ def get_rtl_433_data(sensor_dict):
 	return temperature
 
 def get_rtl_data(query_dict):
-    command_line='/usr/local/bin/rtl_433 -R91 -Csi -v -g50 -Fjson'
+    try: 
+        sensor_types = GLOBALS.get('SENSOR_TYPES')
+        sensor_rtl_433= sensor_types.get('rtl_433mm')
+    	# command_line='/usr/local/bin/rtl_433 -R91 -Csi -v -g50 -Fjson'
+        command_line=sensor_rtl_433.get('command_line')
+    except AttributeError:
+        print('command_line not defined in Sensor rtl_433')
+        sys.exit(-1)
+
     if VERBOSE: 
         print('Suche: ' + str(query_dict))
     proc = subprocess.Popen(command_line, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
     act_pid= proc.pid
     while True:
+        print('read line from process')
+        time.sleep(1)
         line = str(proc.stdout.readline(),encoding).strip()
         if not 'model' in line:
             continue
@@ -318,6 +329,9 @@ while True:
 		now = datetime.datetime.now()
 		unixtime = time.mktime(now.timetuple())	
 		print(str(unixtime) + ': Es konnte keine Temperatur ermittelt werden!')
+	if VERBOSE:
+		print('Warte ' + str(MEASUREMENT_INTERVAL_SECONDS) + 's ...')	
+
 	sleep(MEASUREMENT_INTERVAL_SECONDS)
 	i = i + 1
 conn.close()
