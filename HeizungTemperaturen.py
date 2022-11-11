@@ -18,6 +18,7 @@ sk,04,07,22 Sensor-Dict und Variablen ausgelagert in config.cfg
 sk,09,11,22 Umbau Program und cfg, Abfrage enFactory Sensoren
 sk,09,11,22 Umbau Programm fast fertig
 sk,11,11,22 Umbau Programm fertig, ungetestet
+sk,11,11,22 timeout rtl_433
 
 TODO:
 timeout für rtl_433
@@ -226,10 +227,14 @@ def get_rtl_433_data(sensor_dict):
 
 def get_rtl_data(query_dict):
     try: 
+        start_time = datetime.datetime.now()
         sensor_types = GLOBALS.get('SENSOR_TYPES')
         sensor_rtl_433= sensor_types.get('rtl_433')
     	# command_line='/usr/local/bin/rtl_433 -R91 -Csi -v -g50 -Fjson'
+
         command_line=sensor_rtl_433.get('command_line')
+        time_delay_ms=sensor_rtl_433.get('time_delay_ms')
+        time_out_s=sensor_rtl_433.get('time_out_s')
     except AttributeError:
         print('command_line not defined in Sensor rtl_433')
         sys.exit(-1)
@@ -239,15 +244,21 @@ def get_rtl_data(query_dict):
     proc = subprocess.Popen(command_line, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
     act_pid= proc.pid
     while True:
-        line = str(proc.stdout.readline(),encoding).strip()
-        print('read from process: ' + line)
-        time.sleep(1)
+        now = datetime.datetime.now()
+        duration = now - start_time
+        duration_in_s = duration.total_seconds()
+        if duration_in_s > time_out_s:
+            if VERBOSE: print('Timeout erreicht: ' + str(time_out_s))
+            time.sleep(5) #Wait 5 secs before killing
+            kill_child_processes(act_pid, sig=signal.SIGTERM)
 
+        line = str(proc.stdout.readline(),encoding).strip()
+        time.sleep(time_delay_ms/1000)
         if not 'model' in line:
             continue
         line_dict = json.loads(line)
         if compare_dict(query_dict, line_dict):
-            print('gefunden: ' + str(query_dict.get('model')))
+            if VERBOSE: print('gefunden: ' + str(query_dict.get('model')))
             time.sleep(5) #Wait 5 secs before killing
             kill_child_processes(act_pid, sig=signal.SIGTERM)
             temperature = line_dict.get('temperature_C')
