@@ -249,8 +249,9 @@ def get_rtl_data(query_dict):
         duration_in_s = duration.total_seconds()
         if duration_in_s > time_out_s:
             if VERBOSE: print('Timeout erreicht: ' + str(time_out_s))
-            time.sleep(5) #Wait 5 secs before killing
+            time.sleep(2) #Wait 5 secs before killing
             kill_child_processes(act_pid, sig=signal.SIGTERM)
+            return INVALID_TEMP_STR
 
         line = str(proc.stdout.readline(),encoding).strip()
         time.sleep(time_delay_ms/1000)
@@ -261,8 +262,7 @@ def get_rtl_data(query_dict):
             if VERBOSE: print('gefunden: ' + str(query_dict.get('model')))
             time.sleep(5) #Wait 5 secs before killing
             kill_child_processes(act_pid, sig=signal.SIGTERM)
-            temperature = line_dict.get('temperature_C')
-            
+            temperature = line_dict.get('temperature_C')            
             return temperature
 
 def dict_sort_func(par):
