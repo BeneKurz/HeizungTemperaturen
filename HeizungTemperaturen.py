@@ -227,7 +227,7 @@ def get_rtl_433_data(sensor_dict):
 def get_rtl_data(query_dict):
     try: 
         sensor_types = GLOBALS.get('SENSOR_TYPES')
-        sensor_rtl_433= sensor_types.get('rtl_433mm')
+        sensor_rtl_433= sensor_types.get('rtl_433')
     	# command_line='/usr/local/bin/rtl_433 -R91 -Csi -v -g50 -Fjson'
         command_line=sensor_rtl_433.get('command_line')
     except AttributeError:
