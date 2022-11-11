@@ -219,7 +219,9 @@ def compare_dict(probe_dict, in_dict):
 
 def get_rtl_433_data(sensor_dict):
 	query_dict = sensor_dict.get('query_dict')
-	return get_rtl_data(query_dict)
+	temperature = get_rtl_data(query_dict)
+	if VERBOSE: print(sensor_dict.get('field_name') + ' ' + str(temperature) )
+	return temperature
 
 def get_rtl_data(query_dict):
     command_line='/usr/local/bin/rtl_433 -R91 -Csi -v -g50 -Fjson'
@@ -236,9 +238,8 @@ def get_rtl_data(query_dict):
             print('gefunden: ' + str(query_dict.get('model')))
             time.sleep(5) #Wait 5 secs before killing
             kill_child_processes(act_pid, sig=signal.SIGTERM)
-            bene = line_dict.get('skdfj')
             temperature = line_dict.get('temperature_C')
-            if VERBOSE: print(query_dict.get('field_name') + ' ' + str(temperature) )
+            
             return temperature
 
 def dict_sort_func(par):
