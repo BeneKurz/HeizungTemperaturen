@@ -19,6 +19,7 @@ sk,09,11,22 Umbau Program und cfg, Abfrage enFactory Sensoren
 sk,09,11,22 Umbau Programm fast fertig
 sk,11,11,22 Umbau Programm fertig, ungetestet
 sk,11,11,22 timeout rtl_433
+sk,11,11,22 Fertig, getestet
 
 TODO:
 timeout für rtl_433
@@ -101,7 +102,6 @@ WEATHER_STATIONS=['weatherstation_29','weatherstation_69']
 
 # https://github.com/Pyplate/rpi_temp_logger/blob/master/monitor.py
 def get_DS18B20_data(sensor_dict):
-	#device_entry=SENSORS.get(temperature_key)
 	device_id=sensor_dict.get('ID')
 	if not device_id:
 		return float(INVALID_TEMP_STR)
@@ -134,10 +134,7 @@ def get_DS18B20_data(sensor_dict):
 	else:
 		if VERBOSE: 
 			print('status: ' + status)
-		#print("There was an error.")
-		return float(INVALID_TEMP_STR)
-
-	
+		return float(INVALID_TEMP_STR)	
 
 def GET_UA():
     uastrings = ["Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.111 Safari/537.36",\
@@ -153,7 +150,6 @@ def GET_UA():
                 ]
     return random.choice(uastrings)
 
-
 def get_info_from_station(soup, station_id):
 	links = soup.findAll('tr', id=station_id)
 	station_name = ''
@@ -167,7 +163,6 @@ def get_info_from_station(soup, station_id):
 			if 'name' in str_table_entry:
 				station_name = table_entry.text
 	return temperaturecurrent, station_name
-
 
 def do_get_aussen_temperatur(soup):
 	temp_arr = []
@@ -197,20 +192,13 @@ def get_aussen_temperatur(BASE_URL):
 	AussenTemp = do_get_aussen_temperatur(soup)
 	return AussenTemp
 
-
-
 def kill_child_processes(parent_pid, sig=signal.SIGTERM):
-    # print('Kill proc: ' + str(parent_pid))
     ps_command = subprocess.Popen("ps -o pid --ppid %d --noheaders" % parent_pid, shell=True, stdout=subprocess.PIPE)
     ps_output = ps_command.stdout.read()
     retcode = ps_command.wait()
     assert retcode == 0, "ps command returned %d" % retcode
-    #print(ps_output)
     split_output = ps_output.decode().split("\n")
-    #print(type(split_output))
     for pid_str in split_output[:-1]:
-        # pid_str = (pid_str,encoding).strip()
-        # print(pid_str)
         os.kill(int(pid_str), sig)
 
 def compare_dict(probe_dict, in_dict):
@@ -222,7 +210,7 @@ def compare_dict(probe_dict, in_dict):
 def get_rtl_433_data(sensor_dict):
 	query_dict = sensor_dict.get('query_dict')
 	temperature = get_rtl_data(query_dict)
-	if VERBOSE: print(sensor_dict.get('field_name') + ' ' + str(temperature) )
+	if VERBOSE: print(sensor_dict.get('field_name') + ': ' + str(temperature) )
 	return temperature
 
 def get_rtl_data(query_dict):
@@ -230,8 +218,6 @@ def get_rtl_data(query_dict):
         start_time = datetime.datetime.now()
         sensor_types = GLOBALS.get('SENSOR_TYPES')
         sensor_rtl_433= sensor_types.get('rtl_433')
-    	# command_line='/usr/local/bin/rtl_433 -R91 -Csi -v -g50 -Fjson'
-
         command_line=sensor_rtl_433.get('command_line')
         time_delay_ms=sensor_rtl_433.get('time_delay_ms')
         time_out_s=sensor_rtl_433.get('time_out_s')
@@ -249,7 +235,7 @@ def get_rtl_data(query_dict):
         duration_in_s = duration.total_seconds()
         if duration_in_s > time_out_s:
             if VERBOSE: print('Timeout erreicht: ' + str(time_out_s))
-            time.sleep(2) #Wait 5 secs before killing
+            time.sleep(2) 
             kill_child_processes(act_pid, sig=signal.SIGTERM)
             return INVALID_TEMP_STR
 
@@ -260,7 +246,7 @@ def get_rtl_data(query_dict):
         line_dict = json.loads(line)
         if compare_dict(query_dict, line_dict):
             if VERBOSE: print('gefunden: ' + str(query_dict.get('model')))
-            time.sleep(5) #Wait 5 secs before killing
+            time.sleep(5)
             kill_child_processes(act_pid, sig=signal.SIGTERM)
             temperature = line_dict.get('temperature_C')            
             return temperature
@@ -286,8 +272,6 @@ def get_field_names(sensor_names):
 		field_names.append(SENSORS.get(sensor_name).get('field_name'))
 	return tuple(field_names)
 
-
-
 sensor_names = get_sensor_names()
 field_names = get_field_names(sensor_names)
 if not os.path.isfile(DB_FILENAME):
@@ -304,12 +288,8 @@ while True:
 	sensors = GLOBALS.get('SENSORS')
 	temp_dict={}
 	temperature_list = []
-	#sorted_dict = sorted(SENSORS, key=dict_sort_func)
 	for sensor_name in sensor_names:
-	#for key in sorted_dict:
 		sensor_dict= SENSORS.get(sensor_name)
-		# sensor_name=sensor
-		# sensor_dict=sensors.get(sensor_name)
 		field_name= sensor_dict.get('field_name')
 		sensor_type= sensor_dict.get('sensor_type')
 		if sensor_type == 'UnixTime':
@@ -324,15 +304,11 @@ while True:
 			temp_dict[field_name] = get_rtl_433_data(sensor_dict)
 			temperature_list.append(temp_dict[field_name]) 
 				
-
-
 	if float(temp_dict['AussenTemp']) > -50:
 		temperature_tuple = (temperature_list)
-
 		if VERBOSE: 
 			print('AussenTemperatur: ' + str(temp_dict['AussenTemp']))
 		with conn:
-			#temperature_tuple = (unixtime, ATemp, VTemp, RTemp)
 			if VERBOSE:
 				print('(' + str(i) + ') Speichere Temperaturen: ' + str(temperature_tuple))	
 			sql = "INSERT INTO " + TABLE_NAME + str(field_names) + " VALUES (" + ",".join(["?"]*len(temperature_tuple)) + ")"	
