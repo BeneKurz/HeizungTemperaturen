@@ -16,7 +16,8 @@ sk,02,07,22 Sensor RTemp hinterlegt
 sk,04,07,22 Sensor-Dict geändert
 sk,04,07,22 Sensor-Dict und Variablen ausgelagert in config.cfg
 sk,09,11,22 Umbau Program und cfg, Abfrage enFactory Sensoren
-sk,09,11,22 Umbau Program und cfg fast fertig
+sk,09,11,22 Umbau Programm fast fertig
+sk,11,11,22 Umbau Programm fertig, ungetestet
 
 TODO:
 
@@ -96,9 +97,9 @@ WEATHER_STATIONS=['weatherstation_29','weatherstation_69']
 
 
 # https://github.com/Pyplate/rpi_temp_logger/blob/master/monitor.py
-def get_DS18B20_temp(temperature_key):
-	device_entry=SENSORS.get(temperature_key)
-	device_id=device_entry.get('ID')
+def get_DS18B20_data(sensor_dict):
+	#device_entry=SENSORS.get(temperature_key)
+	device_id=sensor_dict.get('ID')
 	if not device_id:
 		return float(INVALID_TEMP_STR)
 	devicefile='/sys/bus/w1/devices/' + device_id + '/w1_slave'
@@ -215,8 +216,14 @@ def compare_dict(probe_dict, in_dict):
             return False
     return True
 
-def get_rtl_data(check_dict):
-    print('Suche: ' + str(check_dict))
+def get_rtl_433_data(sensor_dict):
+	query_dict = sensor_dict.get('query_dict')
+	return get_rtl_data(query_dict)
+	return INVALID_TEMP_STR
+
+def get_rtl_data(query_dict):
+    command_line='/usr/local/bin/rtl_433 -R91 -Csi -v -g50 -Fjson'
+    print('Suche: ' + str(query_dict))
     proc = subprocess.Popen(command_line, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
     act_pid= proc.pid
     while True:
@@ -224,11 +231,14 @@ def get_rtl_data(check_dict):
         if not 'model' in line:
             continue
         line_dict = json.loads(line)
-        if compare_dict(check_dict, line_dict):
-            print('gefunden: ' + str(check_dict.get('model')))
+        if compare_dict(query_dict, line_dict):
+            print('gefunden: ' + str(query_dict.get('model')))
             time.sleep(5) #Wait 5 secs before killing
             kill_child_processes(act_pid, sig=signal.SIGTERM)
-            return line_dict
+            bene = line_dict.get('skdfj')
+            temperature = line_dict.get('temperature_C')
+            print(query_dict.get('field_name') + ' ' + str(temperature) )
+            return temperature
 
 def dict_sort_func(par):
 	sensor= SENSORS.get(par)
@@ -268,39 +278,40 @@ i = 0
 while True:
 	sensors = GLOBALS.get('SENSORS')
 	temp_dict={}
+	temperature_list = []
 	#sorted_dict = sorted(SENSORS, key=dict_sort_func)
-	for field_name in field_names:
+	for sensor_name in sensor_names:
 	#for key in sorted_dict:
-		sensor= SENSORS.get(field_name)
-		sensor_name=sensor
-		sensor_dict=sensors.get(sensor_name)
+		sensor_dict= SENSORS.get(sensor_name)
+		# sensor_name=sensor
+		# sensor_dict=sensors.get(sensor_name)
 		field_name= sensor_dict.get('field_name')
 		sensor_type= sensor_dict.get('sensor_type')
 		if sensor_type == 'UnixTime':
 			now = datetime.datetime.now()
 			unixtime = time.mktime(now.timetuple())	
 			temp_dict[field_name] = unixtime
+			temperature_list.append(unixtime) 
 		if sensor_type == 'DS18B20':
-			temp_dict[field_name] = get_DS18B20_temp(sensor_name)
+			temp_dict[field_name] = get_DS18B20_data(sensor_dict)
+			temperature_list.append(temp_dict[field_name]) 
+		if sensor_type == 'rtl_433':
+			temp_dict[field_name] = get_rtl_433_data(sensor_dict)
+			temperature_list.append(temp_dict[field_name]) 
+				
 
 
-		
-	temp_dict['ATemp'] = get_aussen_temperatur(BASE_URL)
-	ATemp = temp_dict['ATemp'] 
-
-	if ATemp:
-		#TODO
-		VTemp = get_DS18B20_temp('VTemp')
-		RTemp = get_DS18B20_temp('RTemp')
+	if float(temp_dict['AussenTemp']) > -50:
+		temperature_tuple = (temperature_list)
 
 		if VERBOSE: 
-			print('Mittelwert: ' + str(ATemp))
+			print('AussenTemperatur: ' + str(temp_dict['AussenTemp']))
 		with conn:
-			temperature_tuple = (unixtime, ATemp, VTemp, RTemp)
+			#temperature_tuple = (unixtime, ATemp, VTemp, RTemp)
 			if VERBOSE:
-				print('(' + str(i) + ') Speichere Temperaturen: ' + str(temperature_tuple))		
-			insert_string = 'insert into ' + TABLE_NAME + str(field_names) + ' values (?, ?, ?, ?)'
-			cur.execute(insert_string, temperature_tuple)
+				print('(' + str(i) + ') Speichere Temperaturen: ' + str(temperature_tuple))	
+			sql = "INSERT INTO " + TABLE_NAME + str(field_names) + " VALUES (" + ",".join(["?"]*len(temperature_tuple)) + ")"	
+			cur.execute(sql, temperature_tuple)
 	else:
 		now = datetime.datetime.now()
 		unixtime = time.mktime(now.timetuple())	

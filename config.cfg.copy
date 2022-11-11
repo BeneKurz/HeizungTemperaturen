@@ -5,6 +5,17 @@
 	'DB_NAME': 'Temperaturen.db' ,
 	'TABLE_NAME': 'Temperaturen' ,
 	'VERBOSE': True,
+	'SENSOR_TYPES': {
+		'UnixTime': {		
+			'access_function': 'UnixTime'
+		},
+		'rtl_433': {
+			'access_function': 'UnixTime'
+		},
+		'DS18B20': {
+			'access_function': 'get_DS18B20_data'
+		}
+	},
 	
 	'SENSORS' : {
 		'UTime': {
@@ -22,8 +33,6 @@
 			'query_dict': {'model': 'inFactory-TH', 'channel': 1 },
 			'descr': 'Aussentemperatur-Feld' 
 		},  
-
-
 		'VTemp': {
 			'index': 3,
 		    'sensor_type': 'DS18B20',
