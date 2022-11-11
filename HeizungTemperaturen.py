@@ -23,7 +23,6 @@ sk,11,11,22 Fertig, getestet
 sk,11,11,22 rowcount
 
 TODO:
-timeout für rtl_433
 
 '''
 
@@ -40,11 +39,9 @@ import signal
 from bs4 import BeautifulSoup
 import json
 import sqlite3
+
 encoding = 'utf-8'
 CFG_FILE = 'config.cfg'
-# MEASUREMENT_INTERVAL_SECONDS=60
-# WEATHER_STATION_ACCESS_INTERVAL_SECONDS=60*15
-# INVALID_TEMP_STR='-30.0'
 
 if os.path.isfile(CFG_FILE):
     s = open(CFG_FILE, 'r').read()
@@ -72,40 +69,6 @@ else:
 
 BASE_URL = 'http://www.wetterwarte-sued.com/v_1_0/aktuelles/messwerte/messwerte_aktuell_ochsenhausenstadt.php'
 WEATHER_STATIONS = ['weatherstation_29', 'weatherstation_69']
-
-
-# {
-# 'MEASUREMENT_INTERVAL_SECONDS': 60,
-# 'WEATHER_STATION_ACCESS_INTERVAL_SECONDS' : 60*15,
-# 'INVALID_TEMP_STR': '-30.0',
-# 'DB_NAME': 'Temperaturen.db' ,
-# 'TABLE_NAME': 'Temperaturen' ,
-# 'VERBOSE': True,
-#
-# 	'SENSORS' : {
-# 		'UTime': {
-# 			'ID': None,
-# 			'field_name': 'UnixTime',
-# 			'descr': 'Zeitfeld'
-# 		},
-# 		'ATemp': {
-# 			'ID': None,
-# 			'field_name': 'AussenTemp',
-# 			'descr': 'Aussentemperatur-Feld'
-# 		},
-
-# 		'VTemp': {
-# 			'ID': '28-9283071e64ff',
-# 			'field_name': 'VorlaufTemp',
-# 			'descr': 'Vorlauftemperatur, hersteller= 28-ff-64-1e-07-83-92-c6'
-# 			},
-# 		'RTemp': {
-# 			'ID': '28-01193cfd1606',
-# 			'field_name': 'RuecklaufTemp',
-# 			'descr': 'Ruecklauftemperatur, id='
-# 		},
-# 	},
-# }
 
 
 # https://github.com/Pyplate/rpi_temp_logger/blob/master/monitor.py
@@ -268,7 +231,7 @@ def get_rtl_data(query_dict):
         line_dict = json.loads(line)
         if compare_dict(query_dict, line_dict):
             if VERBOSE:
-                print('gefunden: ' + str(query_dict.get('model')))
+                print('Gefunden: ' + str(line_dict))
             time.sleep(5)
             kill_child_processes(act_pid, sig=signal.SIGTERM)
             temperature = line_dict.get('temperature_C')
