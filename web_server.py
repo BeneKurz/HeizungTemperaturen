@@ -15,6 +15,7 @@ from flask import Flask, render_template, request
 app = Flask(__name__)
 
 import sqlite3
+import datetime
 
 DATABASE_PATH='/var/lib/grafana/Temperaturen.db'
 SERVER_PORT=3001
@@ -25,8 +26,10 @@ def getData():
 
 	for row in curs.execute("SELECT * FROM Temperaturen ORDER BY UnixTIme DESC LIMIT 1"):
 		time = str(row[0])
-		temp = row[1]
+        time = datetime.datetime.now()
+		temp = '24.2'
 		hum = row[2]
+        hum = '56'
 	conn.close()
 	print(str(time) + ' ' + str(temp))
 	return time, temp, hum
