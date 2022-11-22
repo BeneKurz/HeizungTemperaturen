@@ -28,8 +28,9 @@ def getData():
 		time = str(row[0])
 		time = datetime.datetime.now()
 		temp = '24.2'
+		temp = row[2]
 		hum = row[2]
-		hum = '56'
+		#hum = '56'
 	conn.close()
 	print(str(time) + ' ' + str(temp))
 	return time, temp, hum
