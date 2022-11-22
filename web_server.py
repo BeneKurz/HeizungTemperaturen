@@ -22,7 +22,7 @@ def getData():
 	conn=sqlite3.connect(DATABASE_PATH)
 	curs=conn.cursor()
 
-	for row in curs.execute("SELECT * FROM DHT_data ORDER BY Temperaturen DESC LIMIT 1"):
+	for row in curs.execute("SELECT * FROM Temperaturen ORDER BY UnixTIme DESC LIMIT 1"):
 		time = str(row[0])
 		temp = row[1]
 		hum = row[2]
@@ -32,7 +32,6 @@ def getData():
 # main route 
 @app.route("/")
 def index():
-	
 	time, temp, hum = getData()
 	templateData = {
 	  'time'	: time,
@@ -43,4 +42,4 @@ def index():
 
 
 if __name__ == "__main__":
-   app.run(host='0.0.0.0', port=SERVER_PORT, debug=False
+   app.run(host='0.0.0.0', port=SERVER_PORT, debug=False)
