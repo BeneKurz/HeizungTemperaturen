@@ -16,6 +16,7 @@ app = Flask(__name__)
 import sqlite3
 
 DATABASE_PATH='/var/lib/grafana/Temperaturen.db'
+SERVER_PORT=3001
 # Retrieve data from database
 def getData():
 	conn=sqlite3.connect(DATABASE_PATH)
@@ -42,4 +43,4 @@ def index():
 
 
 if __name__ == "__main__":
-   app.run(host='0.0.0.0', port=80, debug=False
+   app.run(host='0.0.0.0', port=SERVER_PORT, debug=False
