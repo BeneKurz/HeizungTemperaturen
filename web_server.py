@@ -28,7 +28,7 @@ def getData():
 		temp = row[1]
 		hum = row[2]
 	conn.close()
-	print(time + ' ' + temp)
+	print(str(time) + ' ' + str(temp))
 	return time, temp, hum
 
 # main route 
