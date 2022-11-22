@@ -3,15 +3,9 @@ def dict_sort_func(par, the_sensors):
     sensor = the_sensors.get(par)
     return sensor.get('index')
 
-def dict_sort_func1(par):
-    sensor = SENSORS.get(par)
-    return sensor.get('index')
-
-
 def get_sensor_names(sensor_dict):
     # Nach index-Feld Sortierte Sensornamen
     f_names = []
-    # sorted_dict1 = sorted(sensor_dict, key=dict_sort_func1)
     sorted_dict = sorted(sensor_dict, key=lambda key: dict_sort_func(key, sensor_dict))
     for key in sorted_dict:
         sensor = sensor_dict.get(key)

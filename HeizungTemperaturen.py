@@ -22,6 +22,7 @@ sk,11,11,22 timeout rtl_433
 sk,11,11,22 Fertig, getestet
 sk,11,11,22 rowcount
 sk,22,11,22 HTTools ausgelagert
+sk,22,11,22 Globale Variablen minimiert
 
 TODO:
 
@@ -50,12 +51,12 @@ if os.path.isfile(CFG_FILE):
     SENSORS = {}
     try:
         GLOBALS = eval(s)
-        MEASUREMENT_INTERVAL_SECONDS = GLOBALS.get('MEASUREMENT_INTERVAL_SECONDS')
-        WEATHER_STATION_ACCESS_INTERVAL_SECONDS = GLOBALS.get(
-            'WEATHER_STATION_ACCESS_INTERVAL_SECONDS')
-        INVALID_TEMP_STR = GLOBALS.get('INVALID_TEMP_STR')
-        DB_NAME = GLOBALS.get('DB_NAME')
-        TABLE_NAME = GLOBALS.get('TABLE_NAME')
+        
+        # MEASUREMENT_INTERVAL_SECONDS = GLOBALS.get('MEASUREMENT_INTERVAL_SECONDS')
+        # WEATHER_STATION_ACCESS_INTERVAL_SECONDS = GLOBALS.get('WEATHER_STATION_ACCESS_INTERVAL_SECONDS')
+        # INVALID_TEMP_STR = GLOBALS.get('INVALID_TEMP_STR')
+        # DB_NAME = GLOBALS.get('DB_NAME')
+        # TABLE_NAME = GLOBALS.get('TABLE_NAME')
         VERBOSE = GLOBALS.get('VERBOSE')
         SENSORS = GLOBALS.get('SENSORS')
     except:
@@ -63,9 +64,9 @@ if os.path.isfile(CFG_FILE):
 
 
 if (os.name == 'nt'):
-    DB_FILENAME = DB_NAME
+    DB_FILENAME = GLOBALS.get('DB_NAME')
 else:
-    DB_FILENAME = '/var/lib/grafana/' + DB_NAME
+    DB_FILENAME = '/var/lib/grafana/' + GLOBALS.get('DB_NAME')
 
 
 BASE_URL = 'http://www.wetterwarte-sued.com/v_1_0/aktuelles/messwerte/messwerte_aktuell_ochsenhausenstadt.php'
@@ -76,14 +77,14 @@ WEATHER_STATIONS = ['weatherstation_29', 'weatherstation_69']
 def get_DS18B20_data(sensor_dict):
     device_id = sensor_dict.get('ID')
     if not device_id:
-        return float(INVALID_TEMP_STR)
+        return float(GLOBALS.get('INVALID_TEMP_STR'))
     devicefile = '/sys/bus/w1/devices/' + device_id + '/w1_slave'
     try:
         fileobj = open(devicefile, 'r')
         lines = fileobj.readlines()
         fileobj.close()
     except:
-        return float(INVALID_TEMP_STR)
+        return float(GLOBALS.get('INVALID_TEMP_STR'))
 
     # get the status from the end of line 1
     try:
@@ -102,11 +103,11 @@ def get_DS18B20_data(sensor_dict):
         except:
             if VERBOSE:
                 print('Error convert float')
-            return float(INVALID_TEMP_STR)
+            return float(GLOBALS.get('INVALID_TEMP_STR'))
     else:
         if VERBOSE:
             print('status: ' + status)
-        return float(INVALID_TEMP_STR)
+        return float(GLOBALS.get('INVALID_TEMP_STR'))
 
 
 def GET_UA():
@@ -127,7 +128,7 @@ def GET_UA():
 def get_info_from_station(soup, station_id):
     links = soup.findAll('tr', id=station_id)
     station_name = ''
-    temperaturecurrent = INVALID_TEMP_STR
+    temperaturecurrent = GLOBALS.get('INVALID_TEMP_STR')
     for link in links:
         table_data = link.find_all('td')
         for table_entry in table_data:
@@ -223,7 +224,7 @@ def get_rtl_data(query_dict):
                 print('Timeout erreicht: ' + str(time_out_s))
             time.sleep(2)
             kill_child_processes(act_pid, sig=signal.SIGTERM)
-            return INVALID_TEMP_STR
+            return GLOBALS.get('INVALID_TEMP_STR')
 
         line = str(proc.stdout.readline(), encoding).strip()
         time.sleep(time_delay_ms/1000)
@@ -242,12 +243,12 @@ def get_rtl_data(query_dict):
 
 
 conn= ''
-sensor_names = get_sensor_names(SENSORS)
-field_names = get_field_names(SENSORS, sensor_names)
+sensor_names = get_sensor_names(GLOBALS.get('SENSORS'))
+field_names = get_field_names(GLOBALS.get('SENSORS'), sensor_names)
 if not os.path.isfile(DB_FILENAME):
     conn = sqlite3.connect(DB_FILENAME)
     cur = conn.cursor()
-    create_string = 'create table ' + TABLE_NAME + str(field_names)
+    create_string = 'create table ' + GLOBALS.get('TABLE_NAME') + str(field_names)
     cur.execute(create_string)
 else:
     conn = sqlite3.connect(DB_FILENAME)
@@ -260,7 +261,7 @@ while True:
 	temp_dict = {}
 	temperature_list = []
 	for sensor_name in sensor_names:
-		sensor_dict = SENSORS.get(sensor_name)
+		sensor_dict = sensors.get(sensor_name)
 		field_name = sensor_dict.get('field_name')
 		sensor_type = sensor_dict.get('sensor_type')
 		if sensor_type == 'UnixTime':
@@ -283,7 +284,7 @@ while True:
 		with conn:
 			if VERBOSE:
 				print('(' + str(i) + ') Speichere Temperaturen: ' + str(temperature_tuple))
-			sql = "INSERT INTO " + TABLE_NAME + str(field_names) + " VALUES (" + ",".join(["?"]*len(temperature_tuple)) + ")"
+			sql = "INSERT INTO " + GLOBALS.get('TABLE_NAME') + str(field_names) + " VALUES (" + ",".join(["?"]*len(temperature_tuple)) + ")"
 			result = cur.execute(sql, temperature_tuple)
 			if VERBOSE: print('Rows inserted: ' + str(result.rowcount))
 	else:
