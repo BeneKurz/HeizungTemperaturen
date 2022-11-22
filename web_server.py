@@ -5,6 +5,7 @@
 #  
 #  Created by MJRoBot.org 
 #  10Jan18
+# https://www.hackster.io/mjrobot/from-data-to-graph-a-web-journey-with-flask-and-sqlite-4dba35
 
 '''
 	RPi Web Server for DHT captured data  
@@ -27,6 +28,7 @@ def getData():
 		temp = row[1]
 		hum = row[2]
 	conn.close()
+	print(time + ' ' + temp)
 	return time, temp, hum
 
 # main route 
