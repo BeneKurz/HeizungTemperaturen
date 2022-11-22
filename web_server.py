@@ -67,7 +67,7 @@ def getData():
 		# #hum = '56'
 	conn.close()
 	print('Data: ' + ' ' + str(templateData))
-	return tuple(templateData)
+	return templateData
 #bene = templateData=getData()
 #print(str(bene))
 
