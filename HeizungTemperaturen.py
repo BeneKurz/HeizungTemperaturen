@@ -21,22 +21,24 @@ sk,11,11,22 Umbau Programm fertig, ungetestet
 sk,11,11,22 timeout rtl_433
 sk,11,11,22 Fertig, getestet
 sk,11,11,22 rowcount
+sk,22,11,22 HTTools ausgelagert
 
 TODO:
 
 '''
 
-from cachetools import cached, TTLCache
+#from cachetools import cached, TTLCache
+from HTTools import get_sensor_names, get_field_names
 from time import sleep
 import os
 import sys
-import requests
+# import requests
 import datetime
 import time
 import random
 import subprocess
 import signal
-from bs4 import BeautifulSoup
+# from bs4 import BeautifulSoup
 import json
 import sqlite3
 
@@ -48,8 +50,7 @@ if os.path.isfile(CFG_FILE):
     SENSORS = {}
     try:
         GLOBALS = eval(s)
-        MEASUREMENT_INTERVAL_SECONDS = GLOBALS.get(
-            'MEASUREMENT_INTERVAL_SECONDS')
+        MEASUREMENT_INTERVAL_SECONDS = GLOBALS.get('MEASUREMENT_INTERVAL_SECONDS')
         WEATHER_STATION_ACCESS_INTERVAL_SECONDS = GLOBALS.get(
             'WEATHER_STATION_ACCESS_INTERVAL_SECONDS')
         INVALID_TEMP_STR = GLOBALS.get('INVALID_TEMP_STR')
@@ -160,13 +161,13 @@ def do_get_aussen_temperatur(soup):
     return average_temp
 
 
-@cached(cache=TTLCache(maxsize=1024, ttl=WEATHER_STATION_ACCESS_INTERVAL_SECONDS))
-def get_aussen_temperatur(BASE_URL):
-    headers = {'User-Agent': GET_UA()}
-    r = requests.get(BASE_URL, headers=headers)
-    soup = BeautifulSoup(r.text, 'html.parser')
-    AussenTemp = do_get_aussen_temperatur(soup)
-    return AussenTemp
+# @cached(cache=TTLCache(maxsize=1024, ttl=WEATHER_STATION_ACCESS_INTERVAL_SECONDS))
+# def get_aussen_temperatur(BASE_URL):
+#     headers = {'User-Agent': GET_UA()}
+#     r = requests.get(BASE_URL, headers=headers)
+#     soup = BeautifulSoup(r.text, 'html.parser')
+#     AussenTemp = do_get_aussen_temperatur(soup)
+#     return AussenTemp
 
 
 def kill_child_processes(parent_pid, sig=signal.SIGTERM):
@@ -238,32 +239,11 @@ def get_rtl_data(query_dict):
             return temperature
 
 
-def dict_sort_func(par):
-    sensor = SENSORS.get(par)
-    return sensor.get('index')
 
-
-def get_sensor_names():
-    # Nach index-Feld Sortierte Sensornamen
-    f_names = []
-    sorted_dict = sorted(SENSORS, key=dict_sort_func)
-    for key in sorted_dict:
-        sensor = SENSORS.get(key)
-        if sensor.get('index') > 0:
-            f_names.append(key)
-    return tuple(f_names)
-
-
-def get_field_names(sensor_names):
-    # Nach index-Feld Sortierte Feldnamen
-    field_names = []
-    for sensor_name in sensor_names:
-        field_names.append(SENSORS.get(sensor_name).get('field_name'))
-    return tuple(field_names)
 
 conn= ''
-sensor_names = get_sensor_names()
-field_names = get_field_names(sensor_names)
+sensor_names = get_sensor_names(SENSORS)
+field_names = get_field_names(SENSORS, sensor_names)
 if not os.path.isfile(DB_FILENAME):
     conn = sqlite3.connect(DB_FILENAME)
     cur = conn.cursor()
@@ -311,9 +291,9 @@ while True:
 		unixtime = time.mktime(now.timetuple())
 		print(str(unixtime) + ': Es konnte keine Temperatur ermittelt werden!')
 	if VERBOSE:
-		print('Warte ' + str(MEASUREMENT_INTERVAL_SECONDS) + 's ...')
+		print('Warte ' + str(GLOBALS.get('MEASUREMENT_INTERVAL_SECONDS')) + 's ...')
 
-	sleep(MEASUREMENT_INTERVAL_SECONDS)
+	sleep(GLOBALS.get('MEASUREMENT_INTERVAL_SECONDS'))
 	i = i + 1
 conn.close()
 if VERBOSE:
