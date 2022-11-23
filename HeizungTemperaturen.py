@@ -23,6 +23,7 @@ sk,11,11,22 Fertig, getestet
 sk,11,11,22 rowcount
 sk,22,11,22 HTTools ausgelagert
 sk,22,11,22 Globale Variablen minimiert
+sk,23,11,22 INVALID_TEMP_STR in Funktion
 
 TODO:
 
@@ -77,14 +78,14 @@ WEATHER_STATIONS = ['weatherstation_29', 'weatherstation_69']
 def get_DS18B20_data(sensor_dict):
     device_id = sensor_dict.get('ID')
     if not device_id:
-        return float(GLOBALS.get('INVALID_TEMP_STR'))
+        return invalid_temp()
     devicefile = '/sys/bus/w1/devices/' + device_id + '/w1_slave'
     try:
         fileobj = open(devicefile, 'r')
         lines = fileobj.readlines()
         fileobj.close()
     except:
-        return float(GLOBALS.get('INVALID_TEMP_STR'))
+        return invalid_temp()
 
     # get the status from the end of line 1
     try:
@@ -103,12 +104,18 @@ def get_DS18B20_data(sensor_dict):
         except:
             if VERBOSE:
                 print('Error convert float')
-            return float(GLOBALS.get('INVALID_TEMP_STR'))
+            return invalid_temp()
     else:
         if VERBOSE:
             print('status: ' + status)
+        return invalid_temp()
+    
+def invalid_temp():
+    if GLOBALS.get('INVALID_TEMP_STR') != '':
         return float(GLOBALS.get('INVALID_TEMP_STR'))
-
+    else:
+        return ''
+    
 
 def GET_UA():
     uastrings = ["Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.111 Safari/537.36",
@@ -224,7 +231,7 @@ def get_rtl_data(query_dict):
                 print('Timeout erreicht: ' + str(time_out_s))
             time.sleep(2)
             kill_child_processes(act_pid, sig=signal.SIGTERM)
-            return GLOBALS.get('INVALID_TEMP_STR')
+            return invalid_temp()
 
         line = str(proc.stdout.readline(), encoding).strip()
         time.sleep(time_delay_ms/1000)
@@ -277,7 +284,8 @@ while True:
 			temp_dict[field_name] = get_rtl_433_data(sensor_dict)
 			temperature_list.append(temp_dict[field_name])
 
-	if float(temp_dict['AussenTemp']) > -50:
+	#if float(temp_dict['AussenTemp']) > -50:
+	if True:
 		temperature_tuple = (temperature_list)
 		if VERBOSE:
 			print('AussenTemperatur: ' + str(temp_dict['AussenTemp']))
