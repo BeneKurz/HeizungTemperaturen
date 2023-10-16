@@ -288,9 +288,9 @@ while True:
 			temp, battery_ok = get_rtl_433_data(sensor_dict)
 			temp_dict[field_name] = temp
 			if battery_ok == 1:
-				battery_dict[field_name] = 'OK'
+				battery_dict[field_name] = 'Batterie OK'
 			else:
-				battery_dict[field_name] = 'Achtung: Wird LEER!'
+				battery_dict[field_name] = 'Achtung: Batterie wird LEER!'
 			temperature_list.append(temp_dict[field_name])
 
 	#if float(temp_dict['AussenTemp']) > -50:
