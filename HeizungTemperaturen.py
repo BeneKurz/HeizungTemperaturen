@@ -199,10 +199,10 @@ def compare_dict(probe_dict, in_dict):
 
 def get_rtl_433_data(sensor_dict):
     query_dict = sensor_dict.get('query_dict')
-    temperature = get_rtl_data(query_dict)
+    temperature, battery_ok = get_rtl_data(query_dict)
     if VERBOSE:
         print(sensor_dict.get('field_name') + ': ' + str(temperature))
-    return temperature
+    return temperature, battery_ok
 
 
 def get_rtl_data(query_dict):
@@ -231,7 +231,7 @@ def get_rtl_data(query_dict):
                 print('Timeout erreicht: ' + str(time_out_s))
             time.sleep(2)
             kill_child_processes(act_pid, sig=signal.SIGTERM)
-            return invalid_temp()
+            return invalid_temp(), 1
 
         line = str(proc.stdout.readline(), encoding).strip()
         time.sleep(time_delay_ms/1000)
@@ -244,7 +244,10 @@ def get_rtl_data(query_dict):
             time.sleep(5)
             kill_child_processes(act_pid, sig=signal.SIGTERM)
             temperature = line_dict.get('temperature_C')
-            return temperature
+            battery_ok = line_dict.get('battery_ok')
+            if VERBOSE:
+                print('battery: ' + str(battery_ok))
+            return temperature, battery_ok
 
 
 
@@ -266,6 +269,7 @@ while True:
 	sensors = GLOBALS.get('SENSORS')
 	ret_code = 0
 	temp_dict = {}
+	battery_dict = {}
 	temperature_list = []
 	for sensor_name in sensor_names:
 		sensor_dict = sensors.get(sensor_name)
@@ -281,10 +285,18 @@ while True:
 			temp_dict[field_name] = get_DS18B20_data(sensor_dict)
 			temperature_list.append(temp_dict[field_name])
 		if sensor_type == 'rtl_433':
-			temp_dict[field_name] = get_rtl_433_data(sensor_dict)
+			temp, battery_ok = get_rtl_433_data(sensor_dict)
+			temp_dict[field_name] = temp
+			if battery_ok == 1:
+				battery_dict[field_name] = 'OK'
+			else:
+				battery_dict[field_name] = 'Achtung: Wird LEER!'
 			temperature_list.append(temp_dict[field_name])
 
 	#if float(temp_dict['AussenTemp']) > -50:
+	with open(GLOBALS.get('BATTERY_STATUSFILE'), 'w') as f:
+		for key in battery_dict:
+			f.write('Sensor ' + key + ': ' + battery_dict[key] + '\n')
 	if True:
 		temperature_tuple = (temperature_list)
 		if VERBOSE:
