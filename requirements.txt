@@ -1,3 +1,4 @@
 cachetools
 bs4
 requests
+python-dotenv
