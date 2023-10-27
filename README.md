@@ -9,6 +9,6 @@ Ermitteln der Heizungstemperaturen und der Aussentemperatur:
 -   [x] Ermitteln Vorlauf/Rücklauftemperatur mit DS18B20-Sensoren
 -   [x] Anzeigen der erzeugten Daten mit einem Jupyter Notebook (Temperatur_Diagramm.ipynb)
 -   [x] Anzeigen der Spreizungskurve
--   [ ] Speichern der Heizungseinstellungen in der Datenbank
+-   [x] Speichern der Heizungseinstellungen in der Datenbank
 -   [ ] Ermitteln der Heizkurve aus den Messdaten
 -   [ ] Anzeigen der Heizkurve
