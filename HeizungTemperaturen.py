@@ -280,7 +280,7 @@ while True:
 		if sensor_type == 'StaticField':
 			value = sensor_dict.get('value')            
 			temp_dict[field_name] = value
-			temperature_list.append(unixtime)
+			temperature_list.append(value)
   
 		if sensor_type == 'UnixTime':
 			now = datetime.datetime.now()
