@@ -24,6 +24,7 @@ sk,11,11,22 rowcount
 sk,22,11,22 HTTools ausgelagert
 sk,22,11,22 Globale Variablen minimiert
 sk,23,11,22 INVALID_TEMP_STR in Funktion
+sk,27,10,23 Steigung und Niveau als statische Werte eingebaut
 
 TODO:
 
@@ -275,6 +276,12 @@ while True:
 		sensor_dict = sensors.get(sensor_name)
 		field_name = sensor_dict.get('field_name')
 		sensor_type = sensor_dict.get('sensor_type')
+  
+		if sensor_type == 'StaticField':
+			value = sensor_dict.get('value')            
+			temp_dict[field_name] = value
+			temperature_list.append(value)
+  
 		if sensor_type == 'UnixTime':
 			now = datetime.datetime.now()
 			unixtime = time.mktime(now.timetuple())
@@ -284,6 +291,7 @@ while True:
 		if sensor_type == 'DS18B20':
 			temp_dict[field_name] = get_DS18B20_data(sensor_dict)
 			temperature_list.append(temp_dict[field_name])
+   
 		if sensor_type == 'rtl_433':
 			temp, battery_ok = get_rtl_433_data(sensor_dict)
 			temp_dict[field_name] = temp
