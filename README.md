@@ -13,4 +13,4 @@ Anzeigen der erzeugten Daten mit einem Jupyter Notebook (Temperatur_Diagramm.ipy
 -   [x] Anzeige des Temperaturverlaufs
 -   [x] Ermitteln der Heizkurve (Heizkenlinie) aus den Messdaten
 -   [x] Anzeigen der Spreizungskurve
--   [ ] Anzeigen der Raumtemperatur abhängig von der Vorlauftemperatur
+-   [x] Anzeigen der Raumtemperatur abhängig von der Vorlauftemperatur
