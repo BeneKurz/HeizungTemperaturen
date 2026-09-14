@@ -2,7 +2,6 @@
 
 Ermitteln der Heizungstemperaturen und der Aussentemperatur (HeizungTemperaturen.py)
 
--   [ ] Ermitteln der Aussentemperatur über Webscraping eines Webservice
 -   [x] Ermitteln der Aussentemperatur über Funkthermometer
 -   [x] Speichern der Daten in SQLite3-Datenbank
 -   [x] Ermitteln Vorlauf/Rücklauftemperatur mit DS18B20-Sensoren
